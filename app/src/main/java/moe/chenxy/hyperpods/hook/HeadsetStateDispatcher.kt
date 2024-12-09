@@ -15,6 +15,7 @@ import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.factory.method
 import com.highcapable.yukihookapi.hook.type.android.IntentClass
 import de.robv.android.xposed.XposedHelpers
+import moe.chenxy.hyperpods.pods.L2CAPController
 import moe.chenxy.hyperpods.pods.PodsScanner
 import moe.chenxy.hyperpods.utils.SystemApisUtils.setIconVisibility
 
@@ -51,14 +52,16 @@ object HeadsetStateDispatcher : YukiBaseHooker() {
                         val context = this.instance as ContextWrapper
                         if (!isPods(device)) return@post
                         if (currState == BluetoothHeadset.STATE_CONNECTING) {
-                            podsScanner?.stopScan()
-                            podsScanner = PodsScanner(context, moduleResources)
-                            podsScanner!!.startScan(device)
+//                            podsScanner?.stopScan()
+//                            podsScanner = PodsScanner(context, moduleResources)
+//                            podsScanner!!.startScan(device)
                         } else if (currState == BluetoothHeadset.STATE_CONNECTED) {
-                            if (podsScanner == null) {
-                                podsScanner = PodsScanner(context, moduleResources)
-                                podsScanner!!.startScan(device)
-                            }
+//                            if (podsScanner == null) {
+//                                podsScanner = PodsScanner(context, moduleResources)
+//                                podsScanner!!.startScan(device)
+//                            }
+                            L2CAPController.mContext = context
+                            L2CAPController.connectPod(device)
                             // Show Wireless Pods icon
                             val statusBarManager =
                                 context.getSystemService("statusbar") as StatusBarManager
