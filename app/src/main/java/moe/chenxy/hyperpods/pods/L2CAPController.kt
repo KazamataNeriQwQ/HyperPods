@@ -10,14 +10,19 @@ import android.os.ParcelUuid
 import android.util.Log
 import com.highcapable.yukihookapi.hook.type.java.BooleanType
 import com.highcapable.yukihookapi.hook.type.java.IntType
+import de.robv.android.xposed.XposedHelpers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import moe.chenxy.hyperpods.utils.SystemApisUtils.METADATA_MAIN_BATTERY
+import moe.chenxy.hyperpods.utils.SystemApisUtils.METADATA_MAIN_CHARGING
+import moe.chenxy.hyperpods.utils.SystemApisUtils.setMetadata
 import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil
 import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil.cancelPodsNotificationByMiuiBt
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.BatteryParams
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.PodParams
+import java.util.Locale
 
 @SuppressLint("MissingPermission", "StaticFieldLeak")
 object L2CAPController {
@@ -45,6 +50,7 @@ object L2CAPController {
                 mShowedConnectedToast = true
             }
             MiuiStrongToastUtil.showPodsNotificationByMiuiBt(mContext!!, BatteryParams(left, right, case), mDevice)
+            setRegularBatteryLevel(minOf(left.battery, right.battery))
         } else if (AirPodsNotifications.ConversationalAwarenessNotification.isConversationalAwarenessData(packet)) {
             AirPodsNotifications.ConversationalAwarenessNotification.setData(packet)
         } else {
@@ -295,5 +301,10 @@ object L2CAPController {
             }
         }
         throw IllegalArgumentException("No element has changed")
+    }
+
+    fun setRegularBatteryLevel(level: Int) {
+        val service = XposedHelpers.getObjectField(mContext, "mAdapterService")
+        XposedHelpers.callMethod(service, "setBatteryLevel", mDevice, level, false)
     }
 }
