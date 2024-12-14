@@ -87,6 +87,7 @@ object L2CAPController {
     fun disconnectedPod(context: Context, device: BluetoothDevice) {
         socket.close()
         cancelPodsNotificationByMiuiBt(context, device)
+        mShowedConnectedToast = false
         mContext = null
     }
 
