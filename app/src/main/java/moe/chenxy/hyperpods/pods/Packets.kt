@@ -1,6 +1,7 @@
 package moe.chenxy.hyperpods.pods;
 
 import android.os.Parcelable
+import android.util.Log
 import kotlinx.parcelize.Parcelize
 
 enum class Enums(val value: ByteArray) {
@@ -87,8 +88,7 @@ class AirPodsNotifications {
     object ANC {
         private val notificationPrefix = Enums.NOISE_CANCELLATION_PREFIX.value
 
-        var status: Int = 1
-            private set
+        var status: Int = 0
 
         fun isANCData(data: ByteArray): Boolean {
             if (data.size != 11) {
@@ -103,13 +103,15 @@ class AirPodsNotifications {
             status = data[7].toInt()
         }
 
-        val name: String =
-             when (status) {
-                1 -> "OFF"
-                2 -> "ON"
-                3 -> "TRANSPARENCY"
-                4 -> "ADAPTIVE"
-                else -> "UNKNOWN"
+        val name: String
+            get() {
+                return when (status) {
+                    1 -> "OFF"
+                    2 -> "ON"
+                    3 -> "TRANSPARENCY"
+                    4 -> "ADAPTIVE"
+                    else -> "UNKNOWN"
+                }
             }
 
     }
