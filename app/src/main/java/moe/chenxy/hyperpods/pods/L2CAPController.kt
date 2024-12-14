@@ -12,6 +12,7 @@ import com.highcapable.yukihookapi.hook.type.java.BooleanType
 import com.highcapable.yukihookapi.hook.type.java.IntType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil
 import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil.cancelPodsNotificationByMiuiBt
@@ -57,6 +58,7 @@ object L2CAPController {
         val uuid = ParcelUuid.fromString("74ec2172-0bad-4d01-8f77-997b2be0722a")
 
         CoroutineScope(Dispatchers.IO).launch {
+            delay(500)
             socket = BluetoothSocket::class.java.getDeclaredConstructor(IntType, BooleanType, BooleanType,
                 BluetoothDevice::class.java, IntType,
                 ParcelUuid::class.java).newInstance(3, true, true, device, 0x1001, uuid) as BluetoothSocket
@@ -66,10 +68,13 @@ object L2CAPController {
             Log.d("Art_Chen", "connected!")
             socket.outputStream.write(Enums.HANDSHAKE.value)
             socket.outputStream.flush()
+            delay(200)
             socket.outputStream.write(Enums.SET_SPECIFIC_FEATURES.value)
             socket.outputStream.flush()
+            delay(200)
             socket.outputStream.write(Enums.REQUEST_NOTIFICATIONS.value)
             socket.outputStream.flush()
+            delay(200)
             while (socket.isConnected) {
                 val buffer = ByteArray(1024)
                 val bytesRead = socket.inputStream.read(buffer)
