@@ -23,6 +23,7 @@ import moe.chenxy.hyperpods.utils.SystemApisUtils.cancelAsUser
 import moe.chenxy.hyperpods.utils.SystemApisUtils.notifyAsUser
 import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil.showCaseBatteryToast
 import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil.showPodsBatteryToast
+import moe.chenxy.hyperpods.utils.miuiStrongToast.data.BatteryParams
 import java.io.File
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
@@ -84,7 +85,7 @@ object MiBluetoothToastHook : YukiBaseHooker(){
 
 
         @SuppressLint("WrongConstant")
-        fun createPodsNotification(bluetoothDevice: BluetoothDevice?, context: Context, left: Int, right: Int, case: Int) {
+        fun createPodsNotification(bluetoothDevice: BluetoothDevice?, context: Context, batteryParams: BatteryParams) {
             val miheadset_notification_Box = context.resources.getIdentifier("miheadset_notification_Box", "string", "com.xiaomi.bluetooth")
             val miheadset_notification_LeftEar = context.resources.getIdentifier("miheadset_notification_LeftEar", "string", "com.xiaomi.bluetooth")
             val miheadset_notification_RightEar = context.resources.getIdentifier("miheadset_notification_RightEar", "string", "com.xiaomi.bluetooth")
@@ -103,10 +104,13 @@ object MiBluetoothToastHook : YukiBaseHooker(){
                     alias = bluetoothDevice.name
                 }
 
-                val caseBattStr = if (case != -1) context.resources.getString(miheadset_notification_Box) + "：" + case + " %\n" else ""
-                val leftEar = if (left != -1) context.resources.getString(miheadset_notification_LeftEar) + "：" + left + "%" else ""
-                val leftToRight = if (left != -1 && right != -1) " | " else ""
-                val rightEar = if (right != -1) leftToRight + context.resources.getString(miheadset_notification_RightEar) + "：" + right + "%" else ""
+                val caseBattStr = if (batteryParams.case!!.battery != 0) "${context.resources.getString(miheadset_notification_Box)}：${batteryParams.case!!.battery} %" +
+                        "${if (batteryParams.case!!.isCharging) " ⚡" else ""}\n" else ""
+                val leftEar = if (batteryParams.left!!.battery != 0) "${context.resources.getString(miheadset_notification_LeftEar)}：${batteryParams.left!!.battery} %" +
+                        (if (batteryParams.left!!.isCharging) " ⚡" else "") else ""
+                val leftToRight = if (batteryParams.left!!.battery != 0 && batteryParams.right!!.battery != -1) " | " else ""
+                val rightEar = if (batteryParams.right!!.battery != 0) "$leftToRight${context.resources.getString(miheadset_notification_RightEar)}：${batteryParams.left!!.battery} %" +
+                        (if (batteryParams.right!!.isCharging) " ⚡" else "") else ""
 
                 val content: String = caseBattStr + leftEar + rightEar
                 val notificationManager = context.getSystemService("notification") as NotificationManager
@@ -185,18 +189,19 @@ object MiBluetoothToastHook : YukiBaseHooker(){
                     val broadcastReceiver = object : BroadcastReceiver() {
                         override fun onReceive(p0: Context?, p1: Intent?) {
                             if (p1?.action == "chen.action.hyperpods.sendstrongtoast") {
-                                val leftBatt = p1.getIntExtra("left", -1)
-                                val leftCharging = p1.getBooleanExtra("leftCharging", false)
-                                val rightBatt = p1.getIntExtra("right", -1)
-                                val rightCharging = p1.getBooleanExtra("rightCharging", false)
-                                val caseBatt = p1.getIntExtra("case", -1)
-                                val caseCharging = p1.getBooleanExtra("caseCharging", false)
-                                val lowBatt = p1.getIntExtra("lowBatt", -1)
+                                val batteryParams = p1.getParcelableExtra<BatteryParams>("batteryParams", BatteryParams::class.java)!!
+                                val leftBatt = batteryParams.left!!.battery
+                                val rightBatt = batteryParams.right!!.battery
+                                val caseBatt = batteryParams.case!!.battery
+                                val caseCharging = batteryParams.case!!.isCharging
+                                val lowBatt = 20
 
-                                Log.i("Art_Chen", "Showing AirPods connected toast")
+                                Log.i("Art_Chen", "Showing AirPods connected toast, leftBatt $leftBatt")
                                 val caseUri = getCaseMp4Uri(context)
                                 if (leftBatt == -1 && rightBatt == -1 && caseBatt != -1 && caseUri != null) {
-                                    showCaseBatteryToast(context, caseBatt, caseCharging, caseUri, lowBatt)
+                                    batteryParams?.case?.let {
+                                        showCaseBatteryToast(context, caseBatt, caseCharging, caseUri, lowBatt)
+                                    }
                                     return
                                 }
                                 val leftUri =
@@ -212,26 +217,22 @@ object MiBluetoothToastHook : YukiBaseHooker(){
 
 
                                 if (leftUri != null && rightUri != null && caseUri != null) {
-                                    showPodsBatteryToast(
-                                        context,
-                                        leftBatt,
-                                        leftCharging,
-                                        leftUri,
-                                        rightBatt,
-                                        rightCharging,
-                                        rightUri,
-                                        caseBatt,
-                                        caseCharging,
-                                        caseUri,
-                                        lowBatt
-                                    )
+                                    batteryParams?.let {
+                                        showPodsBatteryToast(
+                                            context,
+                                            leftUri,
+                                            rightUri,
+                                            caseUri,
+                                            lowBatt,
+                                            it
+                                        )
+                                    }
+
                                 }
                             } else if (p1?.action == "chen.action.hyperpods.updatepodsnotification") {
-                                val leftBatt = p1.getIntExtra("left", -1)
-                                val rightBatt = p1.getIntExtra("right", -1)
-                                val caseBatt = p1.getIntExtra("case", -1)
+                                val batteryParams = p1.getParcelableExtra<BatteryParams>("batteryParams", BatteryParams::class.java)
                                 val device = p1.getParcelableExtra("device", BluetoothDevice::class.java)
-                                createPodsNotification(device, context, leftBatt, rightBatt, caseBatt)
+                                createPodsNotification(device, context, batteryParams!!)
                             } else if (p1?.action == "chen.action.hyperpods.cancelpodsnotification") {
                                 val device = p1.getParcelableExtra("device", BluetoothDevice::class.java) as BluetoothDevice
                                 cancelNotification(device, context)

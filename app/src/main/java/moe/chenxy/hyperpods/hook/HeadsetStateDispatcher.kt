@@ -1,36 +1,43 @@
 package moe.chenxy.hyperpods.hook
 
 import android.annotation.SuppressLint
-import android.app.Service
 import android.app.StatusBarManager
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothHeadset
-import android.bluetooth.BluetoothProfile
+import android.content.Context
 import android.content.ContextWrapper
-import android.content.Intent
 import android.os.Handler
 import android.os.ParcelUuid
 import android.util.Log
+import android.widget.Toast
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.factory.method
-import com.highcapable.yukihookapi.hook.type.android.IntentClass
 import de.robv.android.xposed.XposedHelpers
 import moe.chenxy.hyperpods.pods.L2CAPController
 import moe.chenxy.hyperpods.pods.PodsScanner
 import moe.chenxy.hyperpods.utils.SystemApisUtils.setIconVisibility
-
+import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil.cancelPodsNotificationByMiuiBt
 
 object HeadsetStateDispatcher : YukiBaseHooker() {
-
+    private var isShowedToast = false
     private val airPodsUUIDs = hashSetOf(
         ParcelUuid.fromString("74ec2172-0bad-4d01-8f77-997b2be0722a"),
         ParcelUuid.fromString("2a72e02b-7b99-778f-014d-ad0b7221ec74")
     )
 
-    @SuppressLint("StaticFieldLeak")
+    @SuppressLint("PrivateApi")
+    private fun getBooleanProp(prop: String, def: Boolean): Boolean {
+        return XposedHelpers.callStaticMethod(Class.forName("android.os.SystemProperties"), "getBoolean", prop, def) as Boolean
+    }
+
+    external fun nativeGetHookResult(): Boolean
+
     override fun onHook() {
         var podsScanner : PodsScanner? = null
-        val moduleResources = this.moduleAppResources
+
+        // Load Native hook
+        System.loadLibrary("hyperpods_hook")
+
         "com.android.bluetooth.a2dp.A2dpService".toClass().apply {
             method {
                 name = "handleConnectionStateChanged"
@@ -51,28 +58,31 @@ object HeadsetStateDispatcher : YukiBaseHooker() {
                         )
                         val context = this.instance as ContextWrapper
                         if (!isPods(device)) return@post
+
+                        val statusBarManager =
+                            context.getSystemService("statusbar") as StatusBarManager
                         if (currState == BluetoothHeadset.STATE_CONNECTING) {
 //                            podsScanner?.stopScan()
 //                            podsScanner = PodsScanner(context, moduleResources)
 //                            podsScanner!!.startScan(device)
                         } else if (currState == BluetoothHeadset.STATE_CONNECTED) {
-//                            if (podsScanner == null) {
-//                                podsScanner = PodsScanner(context, moduleResources)
-//                                podsScanner!!.startScan(device)
-//                            }
-                            L2CAPController.mContext = context
-                            L2CAPController.connectPod(device)
                             // Show Wireless Pods icon
-                            val statusBarManager =
-                                context.getSystemService("statusbar") as StatusBarManager
                             statusBarManager.setIconVisibility("wireless_headset", true)
 
+                            val hookRes = nativeGetHookResult()
+                            if (!hookRes) {
+                                Toast.makeText(
+                                    appContext,
+                                    "HyperPods: hook failed, this version of HyperPods will not work!",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                return@post
+                            }
+                            L2CAPController.connectPod(context, device)
+
                         } else if (currState == BluetoothHeadset.STATE_DISCONNECTING || currState == BluetoothHeadset.STATE_DISCONNECTED) {
-                            podsScanner?.stopScan()
-                            podsScanner = null
-                            val statusBarManager =
-                                context.getSystemService("statusbar") as StatusBarManager
                             statusBarManager.setIconVisibility("wireless_headset", false)
+                            L2CAPController.disconnectedPod(context, device)
                         }
                     }
                 }

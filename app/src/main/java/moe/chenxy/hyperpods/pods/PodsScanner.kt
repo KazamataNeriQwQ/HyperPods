@@ -361,16 +361,16 @@ class PodsScanner(private val context: Context, private val moduleResources: Yuk
 
                 Log.v("Art_Chen", "statusChanged battery left $leftBattery right $rightBattery case $caseBattery")
                 if (!isAlreadyShowConnectedToast || (lastCaseBatt == -1 && caseBattery != -1)) {
-                    MiuiStrongToastUtil.showPodsBatteryToastByMiuiBt(
-                        context,
-                        leftBattery,
-                        leftCharging,
-                        rightBattery,
-                        rightCharging,
-                        caseBattery,
-                        caseCharging,
-                        regularPods.lowBattThreshold
-                    )
+//                    MiuiStrongToastUtil.showPodsBatteryToastByMiuiBt(
+//                        context,
+//                        leftBattery,
+//                        leftCharging,
+//                        rightBattery,
+//                        rightCharging,
+//                        caseBattery,
+//                        caseCharging,
+//                        regularPods.lowBattThreshold
+//                    )
 
                     // Prevent double low batt toast
                     if (leftBattery <= regularPods.lowBattThreshold) isAlreadyShowLeftLowBatt = true
@@ -380,45 +380,45 @@ class PodsScanner(private val context: Context, private val moduleResources: Yuk
                 } else {
                     // Low Batt
                     if (!isAlreadyShowLeftLowBatt && !leftCharging && leftBattery in 0 .. regularPods.lowBattThreshold) {
-                        MiuiStrongToastUtil.showPodsBatteryToastByMiuiBt(
-                            context,
-                            leftBattery,
-                            leftCharging,
-                            rightBattery,
-                            rightCharging,
-                            -1,
-                            false,
-                            regularPods.lowBattThreshold
-                        )
+//                        MiuiStrongToastUtil.showPodsBatteryToastByMiuiBt(
+//                            context,
+//                            leftBattery,
+//                            leftCharging,
+//                            rightBattery,
+//                            rightCharging,
+//                            -1,
+//                            false,
+//                            regularPods.lowBattThreshold
+//                        )
                         isAlreadyShowLeftLowBatt = true
                     } else if (!isAlreadyShowRightLowBatt && !rightCharging && rightBattery in 0 .. regularPods.lowBattThreshold) {
-                        MiuiStrongToastUtil.showPodsBatteryToastByMiuiBt(
-                            context,
-                            leftBattery,
-                            leftCharging,
-                            rightBattery,
-                            rightCharging,
-                            -1,
-                            false,
-                            regularPods.lowBattThreshold
-                        )
+//                        MiuiStrongToastUtil.showPodsBatteryToastByMiuiBt(
+//                            context,
+//                            leftBattery,
+//                            leftCharging,
+//                            rightBattery,
+//                            rightCharging,
+//                            -1,
+//                            false,
+//                            regularPods.lowBattThreshold
+//                        )
                         isAlreadyShowRightLowBatt = true
                     } else if (!isAlreadyShowCaseLowBatt && !caseCharging && caseBattery in 0 .. regularPods.lowBattThreshold) {
-                        MiuiStrongToastUtil.showPodsBatteryToastByMiuiBt(
-                            context,
-                            -1,
-                            false,
-                            -1,
-                            false,
-                            caseBattery,
-                            caseCharging,
-                            regularPods.lowBattThreshold
-                        )
+//                        MiuiStrongToastUtil.showPodsBatteryToastByMiuiBt(
+//                            context,
+//                            -1,
+//                            false,
+//                            -1,
+//                            false,
+//                            caseBattery,
+//                            caseCharging,
+//                            regularPods.lowBattThreshold
+//                        )
                         isAlreadyShowCaseLowBatt = true
                     }
                 }
 
-                showPodsNotificationByMiuiBt(context, leftBattery, rightBattery, caseBattery, device)
+//                showPodsNotificationByMiuiBt(context, leftBattery, rightBattery, caseBattery, device)
 
                 chargingMain = leftCharging && rightCharging
                 batteryUnified = if (leftBattery != BATTERY_LEVEL_UNKNOWN && leftBattery < rightBattery) leftBattery else rightBattery

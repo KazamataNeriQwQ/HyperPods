@@ -12,9 +12,14 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import moe.chenxy.hyperpods.BuildConfig
 import moe.chenxy.hyperpods.utils.SystemApisUtils.isHyperOS
+import moe.chenxy.hyperpods.utils.miuiStrongToast.data.BatteryParams
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.IconParams
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.Left
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.Right
@@ -23,7 +28,7 @@ import moe.chenxy.hyperpods.utils.miuiStrongToast.data.TextParams
 
 @SuppressLint("WrongConstant")
 object MiuiStrongToastUtil {
-
+    var lastPodsTimestamp = -1L
     fun showStringToast(context: Context, text: String?, colorType: Int) {
         if (!isHyperOS) {
             Handler(Looper.getMainLooper()).post {
@@ -53,23 +58,24 @@ object MiuiStrongToastUtil {
         }
     }
 
-    fun showCaseBatteryToast(context: Context, case: Int, caseCharing: Boolean, caseMp4Uri: Uri, lowBatteryThreshold: Int) {
+    fun showCaseBatteryToast(context: Context, case: Int, caseCharging: Boolean, caseMp4Uri: Uri, lowBatteryThreshold: Int) {
         if (!isHyperOS) {
             return
         }
+        val caseText = TextParams("$case %", if (caseCharging) Color.GREEN else if (case <= lowBatteryThreshold) Color.RED else Color.WHITE)
+        val caseVideo = IconParams(Category.RAW, FileType.MP4, caseMp4Uri.toString(), 1)
+        val left = Left(iconParams = caseVideo)
+        val right = Right(textParams = caseText)
+        val stringToastBean = StringToastBean(left, right)
+        val jsonStr = Json.encodeToString(StringToastBean.serializer(), stringToastBean)
+        val bundle = StringToastBundle.Builder()
+            .setPackageName("com.xiaomi.bluetooth")
+            .setStrongToastCategory(StrongToastCategory.VIDEO_TEXT)
+            .setTarget(null)
+            .setParam(jsonStr)
+            .onCreate()
+
         try {
-            val caseText = TextParams("$case %", if (caseCharing) Color.GREEN else if (case <= lowBatteryThreshold) Color.RED else Color.WHITE)
-            val caseVideo = IconParams(Category.RAW, FileType.MP4, caseMp4Uri.toString(), 1)
-            val left = Left(iconParams = caseVideo)
-            val right = Right(textParams = caseText)
-            val stringToastBean = StringToastBean(left, right)
-            val jsonStr = Json.encodeToString(StringToastBean.serializer(), stringToastBean)
-            val bundle = StringToastBundle.Builder()
-                .setPackageName("com.xiaomi.bluetooth")
-                .setStrongToastCategory(StrongToastCategory.VIDEO_TEXT)
-                .setTarget(null)
-                .setParam(jsonStr)
-                .onCreate()
             val service = context.getSystemService(Context.STATUS_BAR_SERVICE)
             Log.d("Art_Chen", "Showing Case Batt Toast")
             service.javaClass.getMethod(
@@ -82,70 +88,61 @@ object MiuiStrongToastUtil {
 
     fun showPodsBatteryToast(
         context: Context,
-        left: Int,
-        leftCharging: Boolean,
         leftVideoUri: Uri,
-        right: Int,
-        rightCharging: Boolean,
         rightVideoUri: Uri,
-        case: Int,
-        caseCharing: Boolean,
         caseMp4Uri: Uri,
-        lowBatteryThreshold: Int
+        lowBatteryThreshold: Int = 20,
+        batteryParams: BatteryParams
     ) {
         if (!isHyperOS) {
             return
         }
+        val left = batteryParams.left!!.battery
+        val leftCharging = batteryParams.left!!.isCharging
+        val right = batteryParams.right!!.battery
+        val rightCharging = batteryParams.right!!.isCharging
+        val case = batteryParams.case!!.battery
+        val caseCharging = batteryParams.case!!.isCharging
+
+        val leftText =
+            TextParams(if (left != -1) "$left %" else "", if (leftCharging) Color.GREEN else if (left <= lowBatteryThreshold) Color.RED else Color.WHITE)
+        val leftVideo = IconParams(Category.RAW, FileType.MP4, leftVideoUri.toString(), 1)
+        val rightText =
+            TextParams(if (right != -1) "$right %" else "", if (rightCharging) Color.GREEN else if (right <= lowBatteryThreshold) Color.RED else Color.WHITE)
+        val rightVideo = IconParams(Category.RAW, FileType.MP4, rightVideoUri.toString(), 1)
+        val l = Left(textParams = leftText, iconParams = leftVideo)
+        val r = Right(textParams = rightText, iconParams = rightVideo)
+        val stringToastBean = StringToastBean(l, r)
+        val jsonStr = Json.encodeToString(StringToastBean.serializer(), stringToastBean)
+        val bundle = StringToastBundle.Builder()
+            .setPackageName("com.xiaomi.bluetooth")
+            .setStrongToastCategory(StrongToastCategory.VIDEO_TEXT_TEXT_VIDEO)
+            .setDuration(7000)
+            .setTarget(null)
+            .setParam(jsonStr)
+            .onCreate()
         try {
-            val leftText =
-                TextParams(if (left != -1) "$left %" else "", if (leftCharging) Color.GREEN else if (left <= lowBatteryThreshold) Color.RED else Color.WHITE)
-            val leftVideo = IconParams(Category.RAW, FileType.MP4, leftVideoUri.toString(), 1)
-            val rightText =
-                TextParams(if (right != -1) "$right %" else "", if (rightCharging) Color.GREEN else if (right <= lowBatteryThreshold) Color.RED else Color.WHITE)
-            val rightVideo = IconParams(Category.RAW, FileType.MP4, rightVideoUri.toString(), 1)
-            val l = Left(textParams = leftText, iconParams = leftVideo)
-            val r = Right(textParams = rightText, iconParams = rightVideo)
-            val stringToastBean = StringToastBean(l, r)
-            val jsonStr = Json.encodeToString(StringToastBean.serializer(), stringToastBean)
-            val bundle = StringToastBundle.Builder()
-                .setPackageName("com.xiaomi.bluetooth")
-                .setStrongToastCategory(StrongToastCategory.VIDEO_TEXT_TEXT_VIDEO)
-                .setTarget(null)
-                .setParam(jsonStr)
-                .onCreate()
             val service = context.getSystemService(Context.STATUS_BAR_SERVICE)
             service.javaClass.getMethod(
                 "setStatus", Int::class.javaPrimitiveType, String::class.java, Bundle::class.java
             ).invoke(service, 1, "strong_toast_action", bundle)
-            if (case != -1) {
-                Handler(Looper.getMainLooper()).postDelayed({
-                    showCaseBatteryToast(context, case, caseCharing, caseMp4Uri, lowBatteryThreshold)
-                }, 3500)
+            lastPodsTimestamp = System.currentTimeMillis()
+            CoroutineScope(Dispatchers.Main).launch {
+                delay(4000)
+                showCaseBatteryToast(context, case, caseCharging, caseMp4Uri, lowBatteryThreshold)
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Log.e("Art_Chen", "Failed to show Pods Battery Toast")
         }
     }
 
     fun showPodsBatteryToastByMiuiBt(
         context: Context,
-        left: Int,
-        leftCharging: Boolean,
-        right: Int,
-        rightCharging: Boolean,
-        case: Int,
-        caseCharing: Boolean,
-        lowBatteryThreshold: Int
+        batteryParams: BatteryParams
     ) {
         val intent = Intent("chen.action.hyperpods.sendstrongtoast")
 
-        intent.putExtra("left", left)
-        intent.putExtra("leftCharging", leftCharging)
-        intent.putExtra("right", right)
-        intent.putExtra("rightCharging", rightCharging)
-        intent.putExtra("case", case)
-        intent.putExtra("caseCharging", caseCharing)
-        intent.putExtra("lowBatt", lowBatteryThreshold)
+        intent.putExtra("batteryParams", batteryParams)
 
         intent.`package` = "com.xiaomi.bluetooth"
 
@@ -154,16 +151,12 @@ object MiuiStrongToastUtil {
 
     fun showPodsNotificationByMiuiBt(
         context: Context,
-        left: Int,
-        right: Int,
-        case: Int,
+        batteryParams: BatteryParams,
         device: BluetoothDevice,
     ) {
         val intent = Intent("chen.action.hyperpods.updatepodsnotification")
 
-        intent.putExtra("left", left)
-        intent.putExtra("right", right)
-        intent.putExtra("case", case)
+        intent.putExtra("batteryParams", batteryParams)
         intent.putExtra("device", device)
 
         intent.`package` = "com.xiaomi.bluetooth"

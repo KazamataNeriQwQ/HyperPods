@@ -15,6 +15,7 @@ Express my gratitude to the following projects as `BtHelper` do:
 * [OpenPods](https://github.com/adolfintel/OpenPods): Code base of `BtHelper`.
 * [CAPod](https://github.com/d4rken-org/capod): Media play/pause, OnePod mode, and many other functionalities.
 * [xingrz](https://github.com/xingrz): Android System Settings integration.
+* [aln](https://github.com/kavishdevar/aln): AAP Definition and many awesome functionalities.
 
 
 ## License

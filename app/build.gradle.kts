@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.lsplugin.apksign)
     alias(libs.plugins.lsplugin.resopt)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.parcelize)
 }
 
 apksign {
@@ -22,8 +23,13 @@ android {
         applicationId = "moe.chenxy.hyperpods"
         minSdk = 35
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.1-V-HyperOS"
+        versionCode = 3
+        versionName = "2.0-AAP-V-HyperOS"
+        externalNativeBuild {
+            cmake {
+                cppFlags += ""
+            }
+        }
     }
 
     buildTypes {
@@ -75,6 +81,12 @@ android {
             excludes += "**.properties"
             excludes += "**.bin"
             excludes += "kotlin-tooling-metadata.json"
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
         }
     }
 }
