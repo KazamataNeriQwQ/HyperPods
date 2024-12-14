@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 @Parcelize
 data class PodParams (
-    var battery: Int = -1,
+    var battery: Int = 0,
     var isCharging: Boolean = false,
 ) : Parcelable
 
