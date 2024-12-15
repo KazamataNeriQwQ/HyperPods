@@ -35,9 +35,11 @@ object L2CAPController {
     lateinit var socket: BluetoothSocket
     var mContext: Context? = null
     lateinit var mDevice: BluetoothDevice
+
     var mShowedConnectedToast = false
     var lastCaseConnected = false
     var disconnectedAudio = false
+
     var scanToken: ScanToken? = null
     var routes: List<MediaRoute2Info> = listOf()
     var lastTempBatt = 0
@@ -73,6 +75,52 @@ object L2CAPController {
     }
 
     @OptIn(ExperimentalStdlibApi::class)
+    fun handleBatteryChanged(packet: ByteArray) {
+        val batteries = AirPodsNotifications.BatteryNotification.getBattery()
+        var left = PodParams(
+            batteries[0].level,
+            batteries[0].status == BatteryStatus.CHARGING,
+            batteries[0].status != BatteryStatus.DISCONNECTED
+        )
+        var right = PodParams(
+            batteries[1].level,
+            batteries[1].status == BatteryStatus.CHARGING,
+            batteries[1].status != BatteryStatus.DISCONNECTED
+        )
+        var case = PodParams(
+            batteries[2].level,
+            batteries[2].status == BatteryStatus.CHARGING,
+            batteries[2].status != BatteryStatus.DISCONNECTED
+        )
+        if (BuildConfig.DEBUG) {
+            Log.v(
+                "Art_Chen",
+                "batt left ${left.battery} right ${right.battery} case ${case.battery} packet ${
+                    packet.toHexString(
+                        HexFormat.UpperCase
+                    )
+                }"
+            )
+        }
+
+        if (!mShowedConnectedToast && (left.battery == -1 || right.battery == -1 || (case.isConnected && case.battery == -1))) {
+            // only show connected toast when battery info all correct
+            return
+        }
+
+        // allow show toast again when case status from disconnected to active, it means pods put in the case again
+        if (!mShowedConnectedToast || (lastCaseConnected != case.isConnected && lastCaseConnected == false)) {
+            MiuiStrongToastUtil.showPodsBatteryToastByMiuiBt(mContext!!, BatteryParams(left, right, case))
+            mShowedConnectedToast = true
+        }
+        lastCaseConnected = case.isConnected
+        MiuiStrongToastUtil.showPodsNotificationByMiuiBt(mContext!!, BatteryParams(left, right, case), mDevice)
+
+        lastTempBatt = minOf(left.battery, right.battery)
+        setRegularBatteryLevel(lastTempBatt)
+    }
+
+    @OptIn(ExperimentalStdlibApi::class)
     fun handleAirPodsPacket(packet: ByteArray) {
         if (AirPodsNotifications.EarDetection.isEarDetectionData(packet)) {
             AirPodsNotifications.EarDetection.setStatus(packet)
@@ -92,42 +140,7 @@ object L2CAPController {
 
         } else if (AirPodsNotifications.BatteryNotification.isBatteryData(packet)) {
             AirPodsNotifications.BatteryNotification.setBattery(packet)
-            val batteries = AirPodsNotifications.BatteryNotification.getBattery()
-            var left = PodParams(
-                batteries[0].level,
-                batteries[0].status == BatteryStatus.CHARGING,
-                batteries[0].status != BatteryStatus.DISCONNECTED
-            )
-            var right = PodParams(
-                batteries[1].level,
-                batteries[1].status == BatteryStatus.CHARGING,
-                batteries[1].status != BatteryStatus.DISCONNECTED
-            )
-            var case = PodParams(
-                batteries[2].level,
-                batteries[2].status == BatteryStatus.CHARGING,
-                batteries[2].status != BatteryStatus.DISCONNECTED
-            )
-            if (BuildConfig.DEBUG) {
-                Log.v(
-                    "Art_Chen",
-                    "batt left ${left.battery} right ${right.battery} case ${case.battery} packet ${
-                        packet.toHexString(
-                            HexFormat.UpperCase
-                        )
-                    }"
-                )
-            }
-            // allow show toast again when case status from disconnected to active, it means pods put in the case again
-            if (!mShowedConnectedToast || (lastCaseConnected != case.isConnected && lastCaseConnected == false)) {
-                MiuiStrongToastUtil.showPodsBatteryToastByMiuiBt(mContext!!, BatteryParams(left, right, case))
-                mShowedConnectedToast = true
-            }
-            lastCaseConnected = case.isConnected
-            MiuiStrongToastUtil.showPodsNotificationByMiuiBt(mContext!!, BatteryParams(left, right, case), mDevice)
-
-            lastTempBatt = minOf(left.battery, right.battery)
-            setRegularBatteryLevel(lastTempBatt)
+            handleBatteryChanged(packet)
         } else if (AirPodsNotifications.ConversationalAwarenessNotification.isConversationalAwarenessData(packet)) {
             AirPodsNotifications.ConversationalAwarenessNotification.setData(packet)
         } else {
@@ -413,14 +426,6 @@ object L2CAPController {
         val bytes = hex.split(" ").map { it.toInt(16).toByte() }.toByteArray()
         socket.outputStream?.write(bytes)
         socket.outputStream?.flush()
-    }
-    fun findChangedIndex(oldArray: BooleanArray, newArray: BooleanArray): Int {
-        for (i in oldArray.indices) {
-            if (oldArray[i] != newArray[i]) {
-                return i
-            }
-        }
-        throw IllegalArgumentException("No element has changed")
     }
 
     fun setRegularBatteryLevel(level: Int) {
