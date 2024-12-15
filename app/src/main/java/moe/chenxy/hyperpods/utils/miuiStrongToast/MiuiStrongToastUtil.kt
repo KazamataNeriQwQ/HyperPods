@@ -72,7 +72,6 @@ object MiuiStrongToastUtil {
             .setPackageName("com.xiaomi.bluetooth")
             .setStrongToastCategory(StrongToastCategory.VIDEO_TEXT)
             .setTarget(null)
-            .setDuration(4000)
             .setParam(jsonStr)
             .onCreate()
 
@@ -106,10 +105,10 @@ object MiuiStrongToastUtil {
         val caseCharging = batteryParams.case!!.isCharging
 
         val leftText =
-            TextParams(if (left != 0) "$left %" else "", if (leftCharging) Color.GREEN else if (left <= lowBatteryThreshold) Color.RED else Color.WHITE)
+            TextParams(if (left != -1) "$left %" else "", if (leftCharging) Color.GREEN else if (left <= lowBatteryThreshold) Color.RED else Color.WHITE)
         val leftVideo = IconParams(Category.RAW, FileType.MP4, leftVideoUri.toString(), 1)
         val rightText =
-            TextParams(if (right != 0) "$right %" else "", if (rightCharging) Color.GREEN else if (right <= lowBatteryThreshold) Color.RED else Color.WHITE)
+            TextParams(if (right != -1) "$right %" else "", if (rightCharging) Color.GREEN else if (right <= lowBatteryThreshold) Color.RED else Color.WHITE)
         val rightVideo = IconParams(Category.RAW, FileType.MP4, rightVideoUri.toString(), 1)
         val l = Left(textParams = leftText, iconParams = leftVideo)
         val r = Right(textParams = rightText, iconParams = rightVideo)
@@ -127,17 +126,10 @@ object MiuiStrongToastUtil {
             service.javaClass.getMethod(
                 "setStatus", Int::class.javaPrimitiveType, String::class.java, Bundle::class.java
             ).invoke(service, 1, "strong_toast_action", bundle)
-            if (case > 0) {
-                CoroutineScope(Dispatchers.Main).launch {
-                    delay(4000)
-                    showCaseBatteryToast(
-                        context,
-                        case,
-                        caseCharging,
-                        caseMp4Uri,
-                        lowBatteryThreshold
-                    )
-                }
+            lastPodsTimestamp = System.currentTimeMillis()
+            CoroutineScope(Dispatchers.Main).launch {
+                delay(4000)
+                showCaseBatteryToast(context, case, caseCharging, caseMp4Uri, lowBatteryThreshold)
             }
         } catch (_: Exception) {
             Log.e("Art_Chen", "Failed to show Pods Battery Toast")

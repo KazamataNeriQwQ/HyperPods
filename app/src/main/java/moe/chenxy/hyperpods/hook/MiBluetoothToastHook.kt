@@ -198,8 +198,8 @@ object MiBluetoothToastHook : YukiBaseHooker(){
 
                                 Log.i("Art_Chen", "Showing AirPods connected toast, leftBatt $leftBatt")
                                 val caseUri = getCaseMp4Uri(context)
-                                if (leftBatt == 0 && rightBatt == 0 && caseBatt != 0 && caseUri != null) {
-                                    batteryParams.case?.let {
+                                if (leftBatt == -1 && rightBatt == -1 && caseBatt != -1 && caseUri != null) {
+                                    batteryParams?.case?.let {
                                         showCaseBatteryToast(context, caseBatt, caseCharging, caseUri, lowBatt)
                                     }
                                     return
@@ -217,14 +217,16 @@ object MiBluetoothToastHook : YukiBaseHooker(){
 
 
                                 if (leftUri != null && rightUri != null && caseUri != null) {
-                                    showPodsBatteryToast(
-                                        context,
-                                        leftUri,
-                                        rightUri,
-                                        caseUri,
-                                        lowBatt,
-                                        batteryParams
-                                    )
+                                    batteryParams?.let {
+                                        showPodsBatteryToast(
+                                            context,
+                                            leftUri,
+                                            rightUri,
+                                            caseUri,
+                                            lowBatt,
+                                            it
+                                        )
+                                    }
 
                                 }
                             } else if (p1?.action == "chen.action.hyperpods.updatepodsnotification") {
