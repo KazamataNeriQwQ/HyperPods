@@ -36,6 +36,7 @@ object BatteryComponent {
 object BatteryStatus {
     const val CHARGING = 1
     const val NOT_CHARGING = 2
+    const val NEED_AGAIN = 3
     const val DISCONNECTED = 4
 }
 
@@ -130,17 +131,17 @@ class AirPodsNotifications {
         }
 
         fun setBattery(data: ByteArray) {
-            first = if (data[10].toInt() == BatteryStatus.DISCONNECTED) {
+            first = if (data[10].toInt() == BatteryStatus.DISCONNECTED || data[10].toInt() == BatteryStatus.NEED_AGAIN) {
                 Battery(first.component, first.level, data[10].toInt())
             } else {
                 Battery(data[7].toInt(), data[9].toInt(), data[10].toInt())
             }
-            second = if (data[15].toInt() == BatteryStatus.DISCONNECTED) {
+            second = if (data[15].toInt() == BatteryStatus.DISCONNECTED || data[15].toInt() == BatteryStatus.NEED_AGAIN) {
                 Battery(second.component, second.level, data[15].toInt())
             } else {
                 Battery(data[12].toInt(), data[14].toInt(), data[15].toInt())
             }
-            case = if (data[20].toInt() == BatteryStatus.DISCONNECTED && case.status != BatteryStatus.DISCONNECTED) {
+            case = if ((data[20].toInt() == BatteryStatus.DISCONNECTED || data[20].toInt() == BatteryStatus.NEED_AGAIN) && case.status != BatteryStatus.DISCONNECTED) {
                 Battery(case.component, case.level, data[20].toInt())
             } else {
                 Battery(data[17].toInt(), data[19].toInt(), data[20].toInt())
