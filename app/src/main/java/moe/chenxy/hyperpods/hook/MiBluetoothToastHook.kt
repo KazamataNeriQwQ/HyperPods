@@ -104,12 +104,14 @@ object MiBluetoothToastHook : YukiBaseHooker(){
                     alias = bluetoothDevice.name
                 }
 
-                val caseBattStr = if (batteryParams.case!!.battery != 0) "${context.resources.getString(miheadset_notification_Box)}：${batteryParams.case!!.battery} %" +
-                        "${if (batteryParams.case!!.isCharging) " ⚡" else ""}\n" else ""
-                val leftEar = if (batteryParams.left!!.battery != 0) "${context.resources.getString(miheadset_notification_LeftEar)}：${batteryParams.left!!.battery} %" +
+                val caseBattStr = if (batteryParams.case!!.isConnected)
+                                "${context.resources.getString(miheadset_notification_Box)}：${batteryParams.case!!.battery} %" +
+                                    "${if (batteryParams.case!!.isCharging) " ⚡" else ""}\n"
+                                else ""
+                val leftEar = if (batteryParams.left!!.isConnected) "${context.resources.getString(miheadset_notification_LeftEar)}：${batteryParams.left!!.battery} %" +
                         (if (batteryParams.left!!.isCharging) " ⚡" else "") else ""
-                val leftToRight = if (batteryParams.left!!.battery != 0 && batteryParams.right!!.battery != -1) " | " else ""
-                val rightEar = if (batteryParams.right!!.battery != 0) "$leftToRight${context.resources.getString(miheadset_notification_RightEar)}：${batteryParams.left!!.battery} %" +
+                val leftToRight = if (batteryParams.left!!.isConnected && batteryParams.right!!.isConnected) " | " else ""
+                val rightEar = if (batteryParams.right!!.isConnected) "$leftToRight${context.resources.getString(miheadset_notification_RightEar)}：${batteryParams.left!!.battery} %" +
                         (if (batteryParams.right!!.isCharging) " ⚡" else "") else ""
 
                 val content: String = caseBattStr + leftEar + rightEar
@@ -198,35 +200,33 @@ object MiBluetoothToastHook : YukiBaseHooker(){
 
                                 Log.i("Art_Chen", "Showing AirPods connected toast, leftBatt $leftBatt")
                                 val caseUri = getCaseMp4Uri(context)
-                                if (leftBatt == -1 && rightBatt == -1 && caseBatt != -1 && caseUri != null) {
-                                    batteryParams?.case?.let {
+                                if (!batteryParams.left!!.isConnected && !batteryParams.right!!.isConnected && batteryParams.case!!.isConnected && caseUri != null) {
+                                    batteryParams.case?.let {
                                         showCaseBatteryToast(context, caseBatt, caseCharging, caseUri, lowBatt)
                                     }
                                     return
                                 }
                                 val leftUri =
-                                    if (leftBatt != -1)
+                                    if (batteryParams.left!!.isConnected)
                                         getResourcesUrl(context, "earphone_left_inear")
                                     else
                                         getResourcesUrl(context, "earphone_left_no_inear")
                                 val rightUri =
-                                    if (rightBatt != -1)
+                                    if (batteryParams.right!!.isConnected)
                                         getResourcesUrl(context, "earphone_right_inear")
                                     else
                                         getResourcesUrl(context, "earphone_right_no_inear")
 
 
                                 if (leftUri != null && rightUri != null && caseUri != null) {
-                                    batteryParams?.let {
-                                        showPodsBatteryToast(
-                                            context,
-                                            leftUri,
-                                            rightUri,
-                                            caseUri,
-                                            lowBatt,
-                                            it
-                                        )
-                                    }
+                                    showPodsBatteryToast(
+                                        context,
+                                        leftUri,
+                                        rightUri,
+                                        caseUri,
+                                        lowBatt,
+                                        batteryParams
+                                    )
 
                                 }
                             } else if (p1?.action == "chen.action.hyperpods.updatepodsnotification") {

@@ -10,6 +10,7 @@ import kotlinx.serialization.Serializable
 data class PodParams (
     var battery: Int = 0,
     var isCharging: Boolean = false,
+    var isConnected: Boolean = false,
 ) : Parcelable
 
 @SuppressLint("UnsafeOptInUsageError")

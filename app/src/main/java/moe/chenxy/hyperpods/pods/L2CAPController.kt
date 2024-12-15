@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothSocket
 import android.content.Context
 import android.os.ParcelUuid
 import android.util.Log
+import android.widget.Toast
 import com.highcapable.yukihookapi.hook.type.java.BooleanType
 import com.highcapable.yukihookapi.hook.type.java.IntType
 import de.robv.android.xposed.XposedHelpers
@@ -15,14 +16,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import moe.chenxy.hyperpods.utils.SystemApisUtils.METADATA_MAIN_BATTERY
-import moe.chenxy.hyperpods.utils.SystemApisUtils.METADATA_MAIN_CHARGING
-import moe.chenxy.hyperpods.utils.SystemApisUtils.setMetadata
 import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil
 import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil.cancelPodsNotificationByMiuiBt
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.BatteryParams
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.PodParams
-import java.util.Locale
 
 @SuppressLint("MissingPermission", "StaticFieldLeak")
 object L2CAPController {
@@ -30,6 +27,7 @@ object L2CAPController {
     var mContext: Context? = null
     lateinit var mDevice: BluetoothDevice
     var mShowedConnectedToast = false
+    var lastCaseConnected = false
 
     @OptIn(ExperimentalStdlibApi::class)
     fun handleAirPodsPacket(packet: ByteArray) {
@@ -37,18 +35,43 @@ object L2CAPController {
             AirPodsNotifications.EarDetection.setStatus(packet)
         } else if (AirPodsNotifications.ANC.isANCData(packet)) {
             AirPodsNotifications.ANC.setStatus(packet)
+            // Debug only
+            CoroutineScope(Dispatchers.Main).launch {
+                mContext?.let {
+                    Toast.makeText(
+                        mContext,
+                        "ANC Changed: ${AirPodsNotifications.ANC.name}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
         } else if (AirPodsNotifications.BatteryNotification.isBatteryData(packet)) {
             AirPodsNotifications.BatteryNotification.setBattery(packet)
             val batteries = AirPodsNotifications.BatteryNotification.getBattery()
-            var left = PodParams(batteries[0].level, batteries[0].status == BatteryStatus.CHARGING)
-            var right = PodParams(batteries[1].level, batteries[1].status == BatteryStatus.CHARGING)
-            var case = PodParams(batteries[2].level, batteries[2].status == BatteryStatus.CHARGING)
-
-            Log.d("Art_Chen", "batt left ${left.battery} right ${right.battery} case ${case.battery}")
-            if (!mShowedConnectedToast) {
+            var left = PodParams(
+                batteries[0].level,
+                batteries[0].status == BatteryStatus.CHARGING,
+                batteries[0].status != BatteryStatus.DISCONNECTED
+            )
+            var right = PodParams(
+                batteries[1].level,
+                batteries[1].status == BatteryStatus.CHARGING,
+                batteries[1].status != BatteryStatus.DISCONNECTED
+            )
+            var case = PodParams(
+                batteries[2].level,
+                batteries[2].status == BatteryStatus.CHARGING,
+                batteries[2].status != BatteryStatus.DISCONNECTED
+            )
+            Log.v("Art_Chen", "batt left ${left.battery} right ${right.battery} case ${case.battery} packet ${packet.toHexString(
+                HexFormat.UpperCase)}")
+            // allow show toast again when case status from disconnected to active, it means pods put in the case again
+            if (!mShowedConnectedToast || (lastCaseConnected != case.isConnected && lastCaseConnected == false)) {
                 MiuiStrongToastUtil.showPodsBatteryToastByMiuiBt(mContext!!, BatteryParams(left, right, case))
                 mShowedConnectedToast = true
             }
+            lastCaseConnected = case.isConnected
             MiuiStrongToastUtil.showPodsNotificationByMiuiBt(mContext!!, BatteryParams(left, right, case), mDevice)
             setRegularBatteryLevel(minOf(left.battery, right.battery))
         } else if (AirPodsNotifications.ConversationalAwarenessNotification.isConversationalAwarenessData(packet)) {
