@@ -65,6 +65,12 @@ enum class NoiseControlMode {
     OFF,  NOISE_CANCELLATION, TRANSPARENCY, ADAPTIVE
 }
 
+object EarDetectionStatus {
+    const val IN_EAR = 0x0.toByte()
+    const val OUT_OF_EAR = 0x1.toByte()
+    const val IN_CASE = 0x2.toByte()
+}
+
 class AirPodsNotifications {
     object EarDetection {
         private val notificationBit = Capabilities.EAR_DETECTION
