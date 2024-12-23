@@ -6,7 +6,10 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothSocket
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.media.MediaRoute2Info
 import android.media.MediaRouter2
 import android.media.MediaRouter2.ScanToken
@@ -22,11 +25,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import moe.chenxy.hyperpods.BuildConfig
+import moe.chenxy.hyperpods.pods.EarDetectionStatus
 import moe.chenxy.hyperpods.utils.MediaControl
 import moe.chenxy.hyperpods.utils.SystemApisUtils.setIconVisibility
 import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil
 import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil.cancelPodsNotificationByMiuiBt
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.BatteryParams
+import moe.chenxy.hyperpods.utils.miuiStrongToast.data.EarDetectionParams
+import moe.chenxy.hyperpods.utils.miuiStrongToast.data.HyperPodsAction
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.PodParams
 import java.util.concurrent.Executor
 
@@ -39,14 +45,83 @@ object L2CAPController {
     var mShowedConnectedToast = false
     var lastCaseConnected = false
     var disconnectedAudio = false
+    var disconnectAudio = true
+    var earDetection = true
 
     var scanToken: ScanToken? = null
     var routes: List<MediaRoute2Info> = listOf()
     var lastTempBatt = 0
 
     lateinit var mediaRouter: MediaRouter2
+    var currentEarDetectionParams: EarDetectionParams = EarDetectionParams()
+    var currentBatteryParams: BatteryParams = BatteryParams()
+    var currentAnc: Int = 0
+
+    val broadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(p0: Context?, p1: Intent?) {
+            handleUIEvent(p1!!)
+        }
+    }
+
+    fun changeUIAncStatus(status: Int) {
+        Intent(HyperPodsAction.ACTION_PODS_ANC_CHANGED).apply {
+            this.putExtra("status", status)
+            this.`package` = BuildConfig.APPLICATION_ID
+            this.addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+            mContext!!.sendBroadcast(this)
+        }
+    }
+
+    fun changeUIInEarStatus(status: EarDetectionParams) {
+        Intent(HyperPodsAction.ACTION_EAR_DETECTION_STATUS_CHANGED).apply {
+            this.putExtra("status", status)
+            this.`package` = BuildConfig.APPLICATION_ID
+            this.addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+            mContext!!.sendBroadcast(this)
+        }
+    }
+
+    fun changeUIBatteryStatus(status: BatteryParams) {
+        Intent(HyperPodsAction.ACTION_PODS_BATTERY_CHANGED).apply {
+            this.putExtra("status", status)
+            this.`package` = BuildConfig.APPLICATION_ID
+            this.addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+            mContext!!.sendBroadcast(this)
+        }
+    }
+
+    fun handleUIEvent(intent: Intent) {
+        when (intent.action) {
+            HyperPodsAction.ACTION_PODS_UI_INIT -> {
+                Log.i("Art_Chen", "UI Init")
+
+                changeUIInEarStatus(currentEarDetectionParams)
+                changeUIBatteryStatus(currentBatteryParams)
+                changeUIAncStatus(currentAnc)
+                Intent(HyperPodsAction.ACTION_PODS_CONNECTED).apply {
+                    this.putExtra("device_name", mDevice.name)
+                    mContext!!.sendBroadcast(this)
+                }
+            }
+            HyperPodsAction.ACTION_ANC_SELECT -> {
+                val status = intent.getIntExtra("status", 0)
+                setANCMode(status)
+            }
+
+            HyperPodsAction.ACTION_EAR_DETECTION_SWITCH_CHANGED -> {
+                earDetection = intent.getBooleanExtra("ear_detection", true)
+                disconnectAudio = intent.getBooleanExtra("disconnect_audio", true)
+            }
+        }
+    }
 
     fun handleInEarStatusChanged(status: List<Byte>) {
+        currentEarDetectionParams.left = status[0].toByte()
+        currentEarDetectionParams.right = status[1].toByte()
+        changeUIInEarStatus(currentEarDetectionParams)
+
+        if (!earDetection) return
+
         val leftInEar = status[0].toByte() == EarDetectionStatus.IN_EAR
         val rightInEar = status[1].toByte() == EarDetectionStatus.IN_EAR
         val inEar = if (status.find { it == EarDetectionStatus.IN_CASE || it == 0x3.toByte() } != null) {
@@ -59,10 +134,15 @@ object L2CAPController {
         Log.d("Art_Chen", "handleInEarStatusChanged left $leftInEar right $rightInEar res $inEar")
 
         // Check if need disconnect Audio and switch to speaker
-        if (!leftInEar && !rightInEar && !disconnectedAudio) {
-            disconnectedAudio = true
-            disconnectAudio(mContext!!, mDevice)
-        } else if ((leftInEar || rightInEar) && disconnectedAudio) {
+        if (disconnectAudio) {
+            if (!leftInEar && !rightInEar && !disconnectedAudio) {
+                disconnectedAudio = true
+                disconnectAudio(mContext!!, mDevice)
+            } else if ((leftInEar || rightInEar) && disconnectedAudio) {
+                connectAudio(mContext!!, mDevice)
+                disconnectedAudio = false
+            }
+        } else if (disconnectedAudio){
             connectAudio(mContext!!, mDevice)
             disconnectedAudio = false
         }
@@ -80,17 +160,20 @@ object L2CAPController {
         var left = PodParams(
             batteries[0].level,
             batteries[0].status == BatteryStatus.CHARGING,
-            batteries[0].status != BatteryStatus.DISCONNECTED
+            batteries[0].status != BatteryStatus.DISCONNECTED,
+            batteries[0].status
         )
         var right = PodParams(
             batteries[1].level,
             batteries[1].status == BatteryStatus.CHARGING,
-            batteries[1].status != BatteryStatus.DISCONNECTED
+            batteries[1].status != BatteryStatus.DISCONNECTED,
+            batteries[0].status
         )
         var case = PodParams(
             batteries[2].level,
             batteries[2].status == BatteryStatus.CHARGING,
-            batteries[2].status != BatteryStatus.DISCONNECTED
+            batteries[2].status != BatteryStatus.DISCONNECTED,
+            batteries[0].status
         )
         if (BuildConfig.DEBUG) {
             Log.v(
@@ -103,18 +186,23 @@ object L2CAPController {
             )
         }
 
-        if (!mShowedConnectedToast && (left.battery == -1 || right.battery == -1 || (case.isConnected && case.battery == -1))) {
+        val shouldShowToast = !mShowedConnectedToast || (lastCaseConnected != case.isConnected && lastCaseConnected == false)
+        if (shouldShowToast && (left.battery <= 0 || right.battery <= 0 || (case.isConnected && case.battery <= 0))) {
             // only show connected toast when battery info all correct
             return
         }
 
+        val batteryParams = BatteryParams(left, right, case)
+        currentBatteryParams = batteryParams
+
         // allow show toast again when case status from disconnected to active, it means pods put in the case again
-        if (!mShowedConnectedToast || (lastCaseConnected != case.isConnected && lastCaseConnected == false)) {
-            MiuiStrongToastUtil.showPodsBatteryToastByMiuiBt(mContext!!, BatteryParams(left, right, case))
+        if (shouldShowToast) {
+            MiuiStrongToastUtil.showPodsBatteryToastByMiuiBt(mContext!!, batteryParams)
             mShowedConnectedToast = true
         }
         lastCaseConnected = case.isConnected
-        MiuiStrongToastUtil.showPodsNotificationByMiuiBt(mContext!!, BatteryParams(left, right, case), mDevice)
+        MiuiStrongToastUtil.showPodsNotificationByMiuiBt(mContext!!, batteryParams, mDevice)
+        changeUIBatteryStatus(batteryParams)
 
         lastTempBatt = minOf(left.battery, right.battery)
         setRegularBatteryLevel(lastTempBatt)
@@ -127,17 +215,8 @@ object L2CAPController {
             handleInEarStatusChanged(AirPodsNotifications.EarDetection.status)
         } else if (AirPodsNotifications.ANC.isANCData(packet)) {
             AirPodsNotifications.ANC.setStatus(packet)
-            // Debug only
-            CoroutineScope(Dispatchers.Main).launch {
-                mContext?.let {
-                    Toast.makeText(
-                        mContext,
-                        "ANC Changed: ${AirPodsNotifications.ANC.name}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-
+            currentAnc = AirPodsNotifications.ANC.status
+            changeUIAncStatus(currentAnc)
         } else if (AirPodsNotifications.BatteryNotification.isBatteryData(packet)) {
             AirPodsNotifications.BatteryNotification.setBattery(packet)
             handleBatteryChanged(packet)
@@ -182,6 +261,17 @@ object L2CAPController {
     fun connectPod(context: Context, device: BluetoothDevice) {
         mContext = context
         mDevice = device
+
+        context.registerReceiver(broadcastReceiver, IntentFilter().apply {
+            this.addAction(HyperPodsAction.ACTION_ANC_SELECT)
+            this.addAction(HyperPodsAction.ACTION_PODS_UI_INIT)
+            this.addAction(HyperPodsAction.ACTION_EAR_DETECTION_SWITCH_CHANGED)
+        }, Context.RECEIVER_EXPORTED)
+
+        Intent(HyperPodsAction.ACTION_PODS_CONNECTED).apply {
+            this.putExtra("device_name", device.name)
+            context.sendBroadcast(this)
+        }
 
         MediaControl.mContext = mContext
         mediaRouter = MediaRouter2.getInstance(mContext!!)
@@ -231,6 +321,10 @@ object L2CAPController {
         mContext?.let {
             stopRoutesScan()
             cancelPodsNotificationByMiuiBt(context, device)
+            Intent(HyperPodsAction.ACTION_PODS_DISCONNECTED).apply {
+                context.sendBroadcast(this)
+            }
+            it.unregisterReceiver(broadcastReceiver)
         }
 
         mShowedConnectedToast = false
@@ -315,16 +409,10 @@ object L2CAPController {
         socket.outputStream?.flush()
     }
 
-    var earDetectionEnabled = true
-
     fun setCaseChargingSounds(enabled: Boolean) {
         val bytes = byteArrayOf(0x12, 0x3a, 0x00, 0x01, 0x00, 0x08, if (enabled) 0x00 else 0x01)
         socket.outputStream?.write(bytes)
         socket.outputStream?.flush()
-    }
-
-    fun setEarDetection(enabled: Boolean) {
-        earDetectionEnabled = enabled
     }
 
     fun disconnectAudio(context: Context, device: BluetoothDevice?) {

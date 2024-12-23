@@ -6,6 +6,8 @@ plugins {
     alias(libs.plugins.lsplugin.resopt)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.parcelize)
+    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.jetbrains.compose)
 }
 
 apksign {
@@ -102,4 +104,13 @@ dependencies {
     implementation(libs.yukihookApi)
     ksp(libs.yukihookKsp)
     implementation(libs.kotlinx.serialization.json)
+    // UI Kits
+    implementation(libs.yukonga.miuix)
+    implementation(libs.androidx.activity.compose)
+    implementation(compose.runtime)
+    implementation(compose.foundation)
+    implementation(compose.ui)
+    implementation(compose.components.resources)
+    implementation(compose.preview)
+    debugImplementation(compose.uiTooling)
 }

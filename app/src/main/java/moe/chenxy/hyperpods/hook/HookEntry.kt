@@ -9,6 +9,7 @@ import moe.chenxy.hyperpods.BuildConfig
 @InjectYukiHookWithXposed
 object HookEntry : IYukiHookXposedInit {
     override fun onHook()  = YukiHookAPI.encase {
+        loadApp("com.android.systemui", SystemUIPluginHook)
         loadApp("com.android.bluetooth", HeadsetStateDispatcher)
         loadApp("com.xiaomi.bluetooth", MiBluetoothToastHook)
     }

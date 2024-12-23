@@ -147,7 +147,8 @@ class AirPodsNotifications {
             } else {
                 Battery(data[12].toInt(), data[14].toInt(), data[15].toInt())
             }
-            case = if ((data[20].toInt() == BatteryStatus.DISCONNECTED || data[20].toInt() == BatteryStatus.NEED_AGAIN) && case.status != BatteryStatus.DISCONNECTED) {
+            case = if ((data[20].toInt() == BatteryStatus.DISCONNECTED || data[20].toInt() == BatteryStatus.NEED_AGAIN)
+                        && case.status != BatteryStatus.DISCONNECTED && case.status != BatteryStatus.NEED_AGAIN) {
                 Battery(case.component, case.level, data[20].toInt())
             } else {
                 Battery(data[17].toInt(), data[19].toInt(), data[20].toInt())
