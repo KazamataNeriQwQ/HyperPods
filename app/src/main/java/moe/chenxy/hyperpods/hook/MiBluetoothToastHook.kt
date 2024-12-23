@@ -141,6 +141,12 @@ object MiBluetoothToastHook : YukiBaseHooker(){
                     "miui.appIcon",
                     Icon.createWithResource(context, ic_headset_notification)
                 )
+                val pendingIntent = PendingIntent.getActivity(
+                    context,
+                    0,
+                    Intent("chen.action.hyperpods.show_airpods_ui"),
+                    PendingIntent.FLAG_IMMUTABLE
+                )
                 notificationManager.notifyAsUser(
                     "BTHeadset$address",
                     10003,
@@ -148,6 +154,7 @@ object MiBluetoothToastHook : YukiBaseHooker(){
                         android.R.drawable.stat_sys_data_bluetooth
                     ).setWhen(0L).setTicker(alias).setDefaults(-1).setContentTitle(alias)
                         .setContentText(content)
+                        .setContentIntent(pendingIntent)
                         .setDeleteIntent(deleteIntent(context, bluetoothDevice)).setColor(
                             context.getColor(
                                 system_notification_accent_color
