@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -247,25 +248,25 @@ fun AppHorizontalPager(
         pagerState = pagerState,
         pageContent = { page ->
             when (page) {
-                0 -> {
-                    AnimatedVisibility(visible = canShowDetailPage) {
-                        PodDetailPage(
-                            topAppBarScrollBehavior = topAppBarScrollBehaviorList[0],
-                            padding = padding,
-                            batteryParams = batteryParams,
-                            earDetectionParams = earDetectionParams,
-                            earDetectionEnable = earDetectionEnable,
-                            onEarDetectionChanged = onEarDetectionChanged,
-                            autoSwitchToSpeaker = autoSwitchToSpeaker,
-                            onAutoSwitchToSpeakerChange = onAutoSwitchToSpeakerChange,
-                            ancMode = ancMode,
-                            onAncModeChange = onAncModeChange
-                        )
+                0 -> Crossfade(canShowDetailPage, label = "MainUIShowDetailAnim") { value ->
+                        if (value) {
+                            PodDetailPage(
+                                topAppBarScrollBehavior = topAppBarScrollBehaviorList[0],
+                                padding = padding,
+                                batteryParams = batteryParams,
+                                earDetectionParams = earDetectionParams,
+                                earDetectionEnable = earDetectionEnable,
+                                onEarDetectionChanged = onEarDetectionChanged,
+                                autoSwitchToSpeaker = autoSwitchToSpeaker,
+                                onAutoSwitchToSpeakerChange = onAutoSwitchToSpeakerChange,
+                                ancMode = ancMode,
+                                onAncModeChange = onAncModeChange
+                            )
+                        } else {
+                            WaitingPodsPage()
+                        }
                     }
-                    AnimatedVisibility(visible = !canShowDetailPage) {
-                        WaitingPodsPage()
-                    }
-                }
+
                 1 -> AboutPage(
                     topAppBarScrollBehavior = topAppBarScrollBehaviorList[1],
                     padding = padding
