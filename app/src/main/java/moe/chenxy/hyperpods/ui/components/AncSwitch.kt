@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -130,28 +131,28 @@ fun AncSwitch(ancStatus: NoiseControlMode, onAncModeChange: (NoiseControlMode) -
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
-                Text("Off", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.off), fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
             Column(
                 modifier = Modifier.width(switchWidth),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
-                Text("NC", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.noise_cancellation_title), fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
             Column(
                 modifier = Modifier.width(switchWidth),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
-                Text("Transparency", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.transparency_title), fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
             Column(
                 modifier = Modifier.width(switchWidth),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
-                Text("Adaptive", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.adaptive_title), fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
         }
     }

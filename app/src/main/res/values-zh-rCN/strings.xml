@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pod_info">耳机信息</string>
+    <string name="about">关于</string>
+    <string name="ear_detection_title">入耳检测</string>
+    <string name="ear_detection_summary">自动暂停或播放当前正在播放的内容</string>
+    <string name="auto_switch_to_speaker_title">自动切换到扬声器</string>
+    <string name="auto_switch_to_speaker_summary">当两支耳机都不在耳朵里时切换到扬声器</string>
+    <string name="off">关闭</string>
+    <string name="noise_cancellation_title">降噪</string>
+    <string name="transparency_title">通透模式</string>
+    <string name="adaptive_title">自适应</string>
+    <string name="pod_case">"充电盒: "</string>
+    <string name="batt_left_pod">"左: "</string>
+    <string name="batt_right_pod">"右: "</string>
+</resources>

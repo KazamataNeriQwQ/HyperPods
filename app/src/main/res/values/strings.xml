@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">HyperPods AAP</string>
+    <string name="pod_info">Pod Info</string>
+    <string name="about">About</string>
+    <string name="ear_detection_title">Ear Detection</string>
+    <string name="ear_detection_summary">Auto pause or play the info that currently playing</string>
+    <string name="auto_switch_to_speaker_title">Auto Switch to Speaker</string>
+    <string name="auto_switch_to_speaker_summary">Switch to Speaker when both pod are out of ear</string>
+    <string name="off">Off</string>
+    <string name="noise_cancellation_title">NC</string>
+    <string name="transparency_title">Transparency</string>
+    <string name="adaptive_title">Adaptive</string>
+    <string name="pod_case">"Case: "</string>
+    <string name="batt_left_pod">"Left: "</string>
+    <string name="batt_right_pod">"Right: "</string>
 </resources>

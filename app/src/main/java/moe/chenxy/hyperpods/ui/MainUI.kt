@@ -1,13 +1,11 @@
 package moe.chenxy.hyperpods.ui
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.util.Log
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
@@ -27,6 +25,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -38,6 +37,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
+import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.pods.NoiseControlMode
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.BatteryParams
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.EarDetectionParams
@@ -76,15 +76,15 @@ fun MainUI() {
     }
 
     val mainTitle = remember { mutableStateOf("HyperPods") }
-    val aboutTitle by remember { mutableStateOf("About") }
+    val aboutTitle = stringResource(R.string.about)
     val currentTitle = when (pagerState.currentPage) {
         0 -> mainTitle.value
         else -> aboutTitle
     }
 
     val items = listOf(
-        NavigationItem("Pod Info", MiuixIcons.Settings),
-        NavigationItem("About", MiuixIcons.Info),
+        NavigationItem(stringResource(R.string.pod_info), MiuixIcons.Settings),
+        NavigationItem(stringResource(R.string.about), MiuixIcons.Info),
     )
 
     LaunchedEffect(pagerState) {

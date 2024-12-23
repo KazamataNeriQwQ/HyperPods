@@ -3,13 +3,6 @@ package moe.chenxy.hyperpods.ui.components
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -30,12 +23,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
 import moe.chenxy.hyperpods.R
-import moe.chenxy.hyperpods.pods.BatteryStatus
 import moe.chenxy.hyperpods.pods.EarDetectionStatus
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.BatteryParams
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.EarDetectionParams
@@ -127,7 +119,7 @@ fun Pod(batteryParams: BatteryParams, darkMode: Boolean, modifier: Modifier = Mo
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Left: ", fontSize = 12.sp)
+                Text(stringResource(R.string.batt_left_pod), fontSize = 12.sp)
                 Battery(batteryParams.left!!.isCharging, darkMode, batteryParams.left!!.battery)
             }
         }
@@ -138,7 +130,7 @@ fun Pod(batteryParams: BatteryParams, darkMode: Boolean, modifier: Modifier = Mo
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Right: ", fontSize = 12.sp)
+                Text(stringResource(R.string.batt_right_pod), fontSize = 12.sp)
                 Battery(batteryParams.right!!.isCharging, darkMode, batteryParams.right!!.battery)
             }
         }
@@ -165,7 +157,7 @@ fun Case(podParams: PodParams?, darkMode: Boolean, modifier: Modifier = Modifier
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Case: ", fontSize = 12.sp)
+                Text(stringResource(R.string.pod_case), fontSize = 12.sp)
                 Battery(it.isCharging, darkMode, it.battery)
             }
         }
@@ -202,7 +194,7 @@ fun CaseWithPods(batteryParams: BatteryParams, darkMode: Boolean, modifier: Modi
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Left: ", fontSize = 12.sp)
+                    Text(stringResource(R.string.batt_left_pod), fontSize = 12.sp)
                     Battery(batteryParams.left!!.isCharging, darkMode, batteryParams.left!!.battery)
                 }
                 Row(
@@ -210,7 +202,7 @@ fun CaseWithPods(batteryParams: BatteryParams, darkMode: Boolean, modifier: Modi
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Right: ", fontSize = 12.sp)
+                    Text(stringResource(R.string.batt_right_pod), fontSize = 12.sp)
                     Battery(
                         batteryParams.right!!.isCharging,
                         darkMode,
@@ -228,7 +220,7 @@ fun CaseWithPods(batteryParams: BatteryParams, darkMode: Boolean, modifier: Modi
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Case: ", fontSize = 12.sp)
+                    Text(stringResource(R.string.pod_case), fontSize = 12.sp)
                     Battery(batteryParams.case!!.isCharging, darkMode, batteryParams.case!!.battery)
                 }
             }

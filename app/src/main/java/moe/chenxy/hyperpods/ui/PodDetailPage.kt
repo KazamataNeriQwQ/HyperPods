@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.pods.NoiseControlMode
 import moe.chenxy.hyperpods.ui.components.AncSwitch
 import moe.chenxy.hyperpods.ui.components.PodStatus
@@ -55,8 +57,8 @@ fun PodDetailPage(
                     .padding(12.dp)
             ) {
                 SuperSwitch(
-                    title = "Ear Detection",
-                    summary = "TODO",
+                    title = stringResource(R.string.ear_detection_title),
+                    summary = stringResource(R.string.ear_detection_summary),
                     checked = earDetectionEnable,
                     onCheckedChange = onEarDetectionChanged
                 )
@@ -66,8 +68,8 @@ fun PodDetailPage(
                     exit = fadeOut() + shrinkVertically()
                 ) {
                     SuperSwitch(
-                        title = "Auto Switch to Speaker",
-                        summary = "Switch to Speaker when both pod are out of ear",
+                        title = stringResource(R.string.auto_switch_to_speaker_title),
+                        summary = stringResource(R.string.auto_switch_to_speaker_summary),
                         checked = autoSwitchToSpeaker,
                         onCheckedChange = onAutoSwitchToSpeakerChange,
                     )
