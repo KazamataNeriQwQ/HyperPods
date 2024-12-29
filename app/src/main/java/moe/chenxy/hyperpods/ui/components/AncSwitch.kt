@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -24,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -38,11 +40,12 @@ import top.yukonga.miuix.kmp.basic.Text
 @Composable
 fun AncSwitch(ancStatus: NoiseControlMode, onAncModeChange: (NoiseControlMode) -> Unit) {
     val isDarkMode = isSystemInDarkTheme()
-    val switchWidth = 95.dp
+    val switchWidth = 82.dp
     val switchFullWidth = switchWidth * 4
+    val colModifier = Modifier.width(switchWidth).padding(start = 10.dp, end = 10.dp, top = 5.dp, bottom = 5.dp)
     Box(Modifier.padding(start = 12.dp, end = 12.dp)
         .fillMaxWidth()
-        .height(60.dp)
+        .height(58.dp)
         .background(if (isDarkMode) Color.DarkGray else Color(0xFFE2E2E8) , RoundedCornerShape(10.dp)),
         contentAlignment = Alignment.Center) {
         val offsetX = animateDpAsState(targetValue = when(ancStatus) {
@@ -52,26 +55,25 @@ fun AncSwitch(ancStatus: NoiseControlMode, onAncModeChange: (NoiseControlMode) -
                 NoiseControlMode.ADAPTIVE -> switchWidth * 3
             }, label = "AncSwitchAnimation")
 
-
         Box {
             Row(Modifier
-                .width(switchFullWidth)
-                .height(60.dp)) {
+                .width(switchWidth)
+                .fillMaxHeight()) {
                 Surface(shape = RoundedCornerShape(8.dp), color = if (isDarkMode) Color.Gray else Color.White,
                     modifier = Modifier
                         .width(switchWidth)
-                        .height(60.dp)
+                        .fillMaxHeight()
                         .padding(3.dp)
                         .offset(x = offsetX.value)
                         .shadow(10.dp, RoundedCornerShape(8.dp))) {}
             }
             Row(
                 modifier = Modifier.width(switchFullWidth),
-                horizontalArrangement = Arrangement.SpaceAround,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(
-                    modifier = Modifier.width(switchWidth).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = { onAncModeChange(NoiseControlMode.OFF) }),
+                    modifier = colModifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = { onAncModeChange(NoiseControlMode.OFF) }),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
@@ -82,7 +84,7 @@ fun AncSwitch(ancStatus: NoiseControlMode, onAncModeChange: (NoiseControlMode) -
                     )
                 }
                 Column(
-                    modifier = Modifier.width(switchWidth).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = { onAncModeChange(NoiseControlMode.NOISE_CANCELLATION) }),
+                    modifier = colModifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = { onAncModeChange(NoiseControlMode.NOISE_CANCELLATION) }),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
@@ -93,7 +95,7 @@ fun AncSwitch(ancStatus: NoiseControlMode, onAncModeChange: (NoiseControlMode) -
                     )
                 }
                 Column(
-                    modifier = Modifier.width(switchWidth).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = { onAncModeChange(NoiseControlMode.TRANSPARENCY) }),
+                    modifier = colModifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = { onAncModeChange(NoiseControlMode.TRANSPARENCY) }),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
@@ -104,7 +106,7 @@ fun AncSwitch(ancStatus: NoiseControlMode, onAncModeChange: (NoiseControlMode) -
                     )
                 }
                 Column(
-                    modifier = Modifier.width(switchWidth).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = { onAncModeChange(NoiseControlMode.ADAPTIVE) }),
+                    modifier = colModifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = { onAncModeChange(NoiseControlMode.ADAPTIVE) }),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
@@ -123,34 +125,34 @@ fun AncSwitch(ancStatus: NoiseControlMode, onAncModeChange: (NoiseControlMode) -
         contentAlignment = Alignment.Center) {
         Row(
             modifier = Modifier.width(switchFullWidth),
-            horizontalArrangement = Arrangement.SpaceAround,
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top
         ) {
             Column(
-                modifier = Modifier.width(switchWidth),
+                modifier = colModifier,
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
+                verticalArrangement = Arrangement.Center
             ) {
                 Text(stringResource(R.string.off), fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
             Column(
-                modifier = Modifier.width(switchWidth),
+                modifier = colModifier,
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
+                verticalArrangement = Arrangement.Center
             ) {
                 Text(stringResource(R.string.noise_cancellation_title), fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
             Column(
-                modifier = Modifier.width(switchWidth),
+                modifier = colModifier,
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
+                verticalArrangement = Arrangement.Center
             ) {
                 Text(stringResource(R.string.transparency_title), fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
             Column(
-                modifier = Modifier.width(switchWidth),
+                modifier = colModifier,
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
+                verticalArrangement = Arrangement.Center
             ) {
                 Text(stringResource(R.string.adaptive_title), fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }

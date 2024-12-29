@@ -106,17 +106,17 @@ fun MainUI() {
             when (p1?.action) {
                 HyperPodsAction.ACTION_PODS_ANC_CHANGED -> {
                     ancMode.value =
-                        NoiseControlMode.entries.toTypedArray()[p1.getIntExtra("status", 0) - 1]
+                        NoiseControlMode.entries.toTypedArray()[p1.getIntExtra("status", 1) - 1]
                     restoreAncJob?.cancel()
                 }
 
                 HyperPodsAction.ACTION_EAR_DETECTION_STATUS_CHANGED -> {
                     earDetectionParams.value =
-                        p1.getParcelableExtra<EarDetectionParams>("status", EarDetectionParams::class.java)!!
+                        p1.getParcelableExtra("status", EarDetectionParams::class.java)!!
                 }
 
                 HyperPodsAction.ACTION_PODS_BATTERY_CHANGED -> {
-                    batteryParams.value = p1.getParcelableExtra<BatteryParams>("status", BatteryParams::class.java)!!
+                    batteryParams.value = p1.getParcelableExtra("status", BatteryParams::class.java)!!
                 }
 
                 HyperPodsAction.ACTION_PODS_CONNECTED -> {

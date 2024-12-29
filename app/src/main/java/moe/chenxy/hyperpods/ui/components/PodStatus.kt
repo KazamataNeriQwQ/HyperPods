@@ -113,7 +113,7 @@ fun Pod(batteryParams: BatteryParams, darkMode: Boolean, modifier: Modifier = Mo
             )
         }
 
-        AnimatedVisibility(batteryParams.left?.isConnected == true) {
+        AnimatedVisibility(batteryParams.left != null && batteryParams.left?.isConnected == true) {
             Row(
                 modifier = Modifier.width(140.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -124,7 +124,7 @@ fun Pod(batteryParams: BatteryParams, darkMode: Boolean, modifier: Modifier = Mo
             }
         }
 
-        AnimatedVisibility(batteryParams.right?.isConnected == true) {
+        AnimatedVisibility(batteryParams.right != null && batteryParams.right?.isConnected == true) {
             Row(
                 modifier = Modifier.width(140.dp),
                 verticalAlignment = Alignment.CenterVertically,
