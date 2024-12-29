@@ -111,7 +111,7 @@ object MiBluetoothToastHook : YukiBaseHooker(){
                 val leftEar = if (batteryParams.left!!.isConnected) "${context.resources.getString(miheadset_notification_LeftEar)}：${batteryParams.left!!.battery} %" +
                         (if (batteryParams.left!!.isCharging) " ⚡" else "") else ""
                 val leftToRight = if (batteryParams.left!!.isConnected && batteryParams.right!!.isConnected) " | " else ""
-                val rightEar = if (batteryParams.right!!.isConnected) "$leftToRight${context.resources.getString(miheadset_notification_RightEar)}：${batteryParams.left!!.battery} %" +
+                val rightEar = if (batteryParams.right!!.isConnected) "$leftToRight${context.resources.getString(miheadset_notification_RightEar)}：${batteryParams.right!!.battery} %" +
                         (if (batteryParams.right!!.isCharging) " ⚡" else "") else ""
 
                 val content: String = caseBattStr + leftEar + rightEar
@@ -198,14 +198,11 @@ object MiBluetoothToastHook : YukiBaseHooker(){
                     val broadcastReceiver = object : BroadcastReceiver() {
                         override fun onReceive(p0: Context?, p1: Intent?) {
                             if (p1?.action == "chen.action.hyperpods.sendstrongtoast") {
-                                val batteryParams = p1.getParcelableExtra<BatteryParams>("batteryParams", BatteryParams::class.java)!!
-                                val leftBatt = batteryParams.left!!.battery
-                                val rightBatt = batteryParams.right!!.battery
+                                val batteryParams = p1.getParcelableExtra("batteryParams", BatteryParams::class.java)!!
                                 val caseBatt = batteryParams.case!!.battery
                                 val caseCharging = batteryParams.case!!.isCharging
                                 val lowBatt = 20
 
-                                Log.i("Art_Chen", "Showing AirPods connected toast, leftBatt $leftBatt")
                                 val caseUri = getCaseMp4Uri(context)
                                 if (!batteryParams.left!!.isConnected && !batteryParams.right!!.isConnected && batteryParams.case!!.isConnected && caseUri != null) {
                                     batteryParams.case?.let {
