@@ -53,9 +53,9 @@ object L2CAPController {
     var lastTempBatt = 0
 
     lateinit var mediaRouter: MediaRouter2
-    var currentEarDetectionParams: EarDetectionParams = EarDetectionParams()
-    var currentBatteryParams: BatteryParams = BatteryParams()
-    var currentAnc: Int = 0
+    lateinit var currentEarDetectionParams: EarDetectionParams
+    lateinit var currentBatteryParams: BatteryParams
+    var currentAnc: Int = 1
 
     val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(p0: Context?, p1: Intent?) {
@@ -64,6 +64,10 @@ object L2CAPController {
     }
 
     fun changeUIAncStatus(status: Int) {
+        if (status < 1 || status > 4) {
+            // ignore invalid param
+            return
+        }
         Intent(HyperPodsAction.ACTION_PODS_ANC_CHANGED).apply {
             this.putExtra("status", status)
             this.`package` = BuildConfig.APPLICATION_ID
@@ -95,8 +99,12 @@ object L2CAPController {
             HyperPodsAction.ACTION_PODS_UI_INIT -> {
                 Log.i("Art_Chen", "UI Init")
 
-                changeUIInEarStatus(currentEarDetectionParams)
-                changeUIBatteryStatus(currentBatteryParams)
+                if (::currentEarDetectionParams.isInitialized)
+                    changeUIInEarStatus(currentEarDetectionParams)
+
+                if (::currentBatteryParams.isInitialized)
+                    changeUIBatteryStatus(currentBatteryParams)
+
                 changeUIAncStatus(currentAnc)
                 Intent(HyperPodsAction.ACTION_PODS_CONNECTED).apply {
                     this.putExtra("device_name", mDevice.name)
@@ -116,8 +124,11 @@ object L2CAPController {
     }
 
     fun handleInEarStatusChanged(status: List<Byte>) {
-        currentEarDetectionParams.left = status[0].toByte()
-        currentEarDetectionParams.right = status[1].toByte()
+        if (!::currentBatteryParams.isInitialized) {
+            currentEarDetectionParams = EarDetectionParams()
+        }
+        currentEarDetectionParams.left = status[0]
+        currentEarDetectionParams.right = status[1]
         changeUIInEarStatus(currentEarDetectionParams)
 
         if (!earDetection) return
@@ -167,13 +178,13 @@ object L2CAPController {
             batteries[1].level,
             batteries[1].status == BatteryStatus.CHARGING,
             batteries[1].status != BatteryStatus.DISCONNECTED,
-            batteries[0].status
+            batteries[1].status
         )
         var case = PodParams(
             batteries[2].level,
             batteries[2].status == BatteryStatus.CHARGING,
             batteries[2].status != BatteryStatus.DISCONNECTED,
-            batteries[0].status
+            batteries[2].status
         )
         if (BuildConfig.DEBUG) {
             Log.v(
