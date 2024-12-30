@@ -37,6 +37,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
+import moe.chenxy.hyperpods.MainActivity
 import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.pods.NoiseControlMode
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.BatteryParams
@@ -75,7 +76,7 @@ fun MainUI() {
         else -> topAppBarScrollBehaviorList[1]
     }
 
-    val mainTitle = remember { mutableStateOf("HyperPods") }
+    val mainTitle = remember { mutableStateOf("") }
     val aboutTitle = stringResource(R.string.about)
     val currentTitle = when (pagerState.currentPage) {
         0 -> mainTitle.value
@@ -121,14 +122,17 @@ fun MainUI() {
 
                 HyperPodsAction.ACTION_PODS_CONNECTED -> {
                     val deviceName = p1.getStringExtra("device_name")
-                    mainTitle.value = deviceName ?: "HyperPods"
+                    mainTitle.value = deviceName ?: ""
                     canShowDetailPage.value = true
                     Log.i("Art_Chen", "pod connected deviceName: $deviceName")
                 }
 
                 HyperPodsAction.ACTION_PODS_DISCONNECTED -> {
-                    mainTitle.value = "HyperPods"
+                    mainTitle.value = ""
                     canShowDetailPage.value = false
+                    if (p0 is MainActivity) {
+                        p0.finish()
+                    }
                 }
             }
         }
