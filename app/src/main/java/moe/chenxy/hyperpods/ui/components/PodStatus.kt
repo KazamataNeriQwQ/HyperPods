@@ -180,12 +180,12 @@ fun CaseWithPods(batteryParams: BatteryParams, darkMode: Boolean, modifier: Modi
         }
 
         Row(
-            modifier = modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(
-                modifier = Modifier.width(140.dp),
+                modifier = Modifier.width(140.dp).weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceAround
             ) {
@@ -211,7 +211,7 @@ fun CaseWithPods(batteryParams: BatteryParams, darkMode: Boolean, modifier: Modi
                 }
             }
             Column(
-                modifier = modifier,
+                modifier = Modifier.width(140.dp).weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceAround
             ) {
