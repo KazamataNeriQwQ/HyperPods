@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">HyperPods AAP</string>
     <string name="pod_info">Pod Info</string>
-    <string name="about">About</string>
+    <string name="about">About HyperPods</string>
     <string name="ear_detection_title">Ear Detection</string>
     <string name="ear_detection_summary">Auto pause or play the info that currently playing</string>
     <string name="auto_switch_to_speaker_title">Auto Switch to Speaker</string>
@@ -13,4 +13,5 @@
     <string name="pod_case">"Case: "</string>
     <string name="batt_left_pod">"Left: "</string>
     <string name="batt_right_pod">"Right: "</string>
+    <string name="waiting_for_pod">Waiting for AirPods Connection…</string>
 </resources>
