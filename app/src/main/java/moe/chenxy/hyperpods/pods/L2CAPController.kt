@@ -124,11 +124,7 @@ object L2CAPController {
     }
 
     fun handleInEarStatusChanged(status: List<Byte>) {
-        if (!::currentBatteryParams.isInitialized) {
-            currentEarDetectionParams = EarDetectionParams()
-        }
-        currentEarDetectionParams.left = status[0]
-        currentEarDetectionParams.right = status[1]
+        currentEarDetectionParams = EarDetectionParams(status[0], status[1])
         changeUIInEarStatus(currentEarDetectionParams)
 
         if (!earDetection) return
