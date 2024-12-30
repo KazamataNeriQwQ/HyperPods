@@ -10,6 +10,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.media.AudioManager
 import android.media.MediaRoute2Info
 import android.media.MediaRouter2
 import android.media.MediaRouter2.ScanToken
@@ -27,6 +28,7 @@ import kotlinx.coroutines.launch
 import moe.chenxy.hyperpods.BuildConfig
 import moe.chenxy.hyperpods.pods.EarDetectionStatus
 import moe.chenxy.hyperpods.utils.MediaControl
+import moe.chenxy.hyperpods.utils.SystemApisUtils
 import moe.chenxy.hyperpods.utils.SystemApisUtils.setIconVisibility
 import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil
 import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil.cancelPodsNotificationByMiuiBt
@@ -41,23 +43,27 @@ object L2CAPController {
     lateinit var socket: BluetoothSocket
     var mContext: Context? = null
     lateinit var mDevice: BluetoothDevice
+    private val audioManager: AudioManager? by lazy {
+        mContext?.getSystemService(AudioManager::class.java)
+    }
 
-    var mShowedConnectedToast = false
-    var lastCaseConnected = false
-    var disconnectedAudio = false
-    var disconnectAudio = true
-    var earDetection = true
+    private var mShowedConnectedToast = false
+    private var lastCaseConnected = false
+    private var disconnectedAudio = false
+    private var pausedAudio = false
+    private var disconnectAudio = true
+    private var earDetection = true
 
-    var scanToken: ScanToken? = null
+    private var scanToken: ScanToken? = null
     var routes: List<MediaRoute2Info> = listOf()
-    var lastTempBatt = 0
+    private var lastTempBatt = 0
 
     lateinit var mediaRouter: MediaRouter2
     lateinit var currentEarDetectionParams: EarDetectionParams
     lateinit var currentBatteryParams: BatteryParams
-    var currentAnc: Int = 1
+    private var currentAnc: Int = 1
 
-    val broadcastReceiver = object : BroadcastReceiver() {
+    private val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(p0: Context?, p1: Intent?) {
             handleUIEvent(p1!!)
         }
@@ -129,8 +135,8 @@ object L2CAPController {
 
         if (!earDetection) return
 
-        val leftInEar = status[0].toByte() == EarDetectionStatus.IN_EAR
-        val rightInEar = status[1].toByte() == EarDetectionStatus.IN_EAR
+        val leftInEar = status[0] == EarDetectionStatus.IN_EAR
+        val rightInEar = status[1] == EarDetectionStatus.IN_EAR
         val inEar = if (status.find { it == EarDetectionStatus.IN_CASE || it == 0x3.toByte() } != null) {
             // one is in case
             leftInEar || rightInEar
@@ -154,10 +160,16 @@ object L2CAPController {
             disconnectedAudio = false
         }
 
+        val audioIsPlaying = audioManager?.isMusicActive == true
+
         if (inEar) {
-            MediaControl.sendPlay()
-        } else if (!disconnectedAudio){
+            if (pausedAudio && !audioIsPlaying) {
+                MediaControl.sendPlay()
+                pausedAudio = false
+            }
+        } else if (!disconnectedAudio && audioIsPlaying){
             MediaControl.sendPause()
+            pausedAudio = true
         }
     }
 
@@ -211,7 +223,14 @@ object L2CAPController {
         MiuiStrongToastUtil.showPodsNotificationByMiuiBt(mContext!!, batteryParams, mDevice)
         changeUIBatteryStatus(batteryParams)
 
-        lastTempBatt = minOf(left.battery, right.battery)
+        lastTempBatt = if (left.isConnected && right.isConnected)
+                minOf(left.battery, right.battery)
+            else if (left.isConnected)
+                left.battery
+            else if (right.isConnected)
+                right.battery
+            else SystemApisUtils.BATTERY_LEVEL_UNKNOWN
+
         setRegularBatteryLevel(lastTempBatt)
     }
 
@@ -335,6 +354,8 @@ object L2CAPController {
         }
 
         mShowedConnectedToast = false
+        pausedAudio = false
+        disconnectedAudio = false
         mContext = null
         MediaControl.mContext = null
     }
