@@ -31,6 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
+import com.highcapable.yukihookapi.hook.factory.prefs
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
@@ -50,6 +51,7 @@ import moe.chenxy.hyperpods.pods.NoiseControlMode
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.BatteryParams
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.EarDetectionParams
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.HyperPodsAction
+import moe.chenxy.hyperpods.utils.miuiStrongToast.data.HyperPodsPrefsKey
 import top.yukonga.miuix.kmp.basic.HorizontalPager
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.NavigationBar
@@ -101,11 +103,12 @@ fun MainUI() {
             targetPage = pagerState.currentPage
         }
     }
+    val context = LocalContext.current
 
-    val earDetectionEnable = remember { mutableStateOf(true) }
+    val earDetectionEnable = remember { mutableStateOf(context.prefs().getBoolean(HyperPodsPrefsKey.EAR_DETECTION, true)) }
     val earDetectionParams = remember { mutableStateOf(EarDetectionParams()) }
     val batteryParams = remember { mutableStateOf(BatteryParams()) }
-    val autoSwitchToSpeaker = remember { mutableStateOf(true) }
+    val autoSwitchToSpeaker = remember { mutableStateOf(context.prefs().getBoolean(HyperPodsPrefsKey.EAR_DETECTION_SWITCH_SPEAKER, true)) }
     val canShowDetailPage = remember { mutableStateOf(false) }
     val ancMode = remember { mutableStateOf(NoiseControlMode.OFF) }
     val init = remember { mutableStateOf(false) }
@@ -146,7 +149,7 @@ fun MainUI() {
             }
         }
     }
-    val context = LocalContext.current
+
     if (!init.value) {
         context.registerReceiver(broadcastReceiver, IntentFilter().apply {
             this.addAction(HyperPodsAction.ACTION_PODS_ANC_CHANGED)
@@ -177,7 +180,10 @@ fun MainUI() {
     }
 
     fun setEarDetection(main: Boolean, disconnect: Boolean) {
-        // TODO: Save to SharedPreference
+        context.prefs().edit {
+            putBoolean(HyperPodsPrefsKey.EAR_DETECTION, main)
+            putBoolean(HyperPodsPrefsKey.EAR_DETECTION_SWITCH_SPEAKER, disconnect)
+        }
         Intent(HyperPodsAction.ACTION_EAR_DETECTION_SWITCH_CHANGED).apply {
             this.putExtra("ear_detection", main)
             this.putExtra("disconnect_audio", disconnect)

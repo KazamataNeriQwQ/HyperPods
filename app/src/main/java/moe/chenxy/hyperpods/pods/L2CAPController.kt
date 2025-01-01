@@ -19,6 +19,7 @@ import android.os.ParcelUuid
 import android.util.Log
 import com.highcapable.yukihookapi.hook.type.java.BooleanType
 import com.highcapable.yukihookapi.hook.type.java.IntType
+import com.highcapable.yukihookapi.hook.xposed.prefs.YukiHookPrefsBridge
 import de.robv.android.xposed.XposedHelpers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,35 +34,41 @@ import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil.cancelPods
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.BatteryParams
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.EarDetectionParams
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.HyperPodsAction
+import moe.chenxy.hyperpods.utils.miuiStrongToast.data.HyperPodsPrefsKey
 import moe.chenxy.hyperpods.utils.miuiStrongToast.data.PodParams
 import java.util.concurrent.Executor
 
 @SuppressLint("MissingPermission", "StaticFieldLeak")
 object L2CAPController {
+    private const val TAG = "HyperPods-L2CAPController"
+
+    // Basic Object
     lateinit var socket: BluetoothSocket
     private var mContext: Context? = null
     lateinit var mDevice: BluetoothDevice
     private val audioManager: AudioManager? by lazy {
         mContext?.getSystemService(AudioManager::class.java)
     }
+    private lateinit var mPrefsBridge: YukiHookPrefsBridge
 
+    private var scanToken: ScanToken? = null
+    var routes: List<MediaRoute2Info> = listOf()
+
+    private lateinit var mediaRouter: MediaRouter2
+
+    // Status
     private var mShowedConnectedToast = false
     private var lastCaseConnected = false
     private var disconnectedAudio = false
     private var pausedAudio = false
-    private var disconnectAudio = true
-    private var earDetection = true
-
-    private var scanToken: ScanToken? = null
-    var routes: List<MediaRoute2Info> = listOf()
     private var lastTempBatt = 0
-
-    private lateinit var mediaRouter: MediaRouter2
     lateinit var currentEarDetectionParams: EarDetectionParams
     lateinit var currentBatteryParams: BatteryParams
     private var currentAnc: Int = 1
 
-    private const val TAG = "HyperPods-L2CAPController"
+    // Function toggle
+    private var earDetection = true
+    private var disconnectAudio = true
 
     private val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(p0: Context?, p1: Intent?) {
@@ -275,6 +282,11 @@ object L2CAPController {
 
     }
 
+    fun updateFeatureToggle() {
+        earDetection = mPrefsBridge.getBoolean(HyperPodsPrefsKey.EAR_DETECTION, true)
+        disconnectAudio = mPrefsBridge.getBoolean(HyperPodsPrefsKey.EAR_DETECTION_SWITCH_SPEAKER, true)
+    }
+
     val routeCallback = object : MediaRouter2.RouteCallback() {
         override fun onRoutesUpdated(routes: List<MediaRoute2Info>) {
             Log.v(TAG, "routes updated: $routes")
@@ -298,9 +310,12 @@ object L2CAPController {
         mediaRouter.unregisterRouteCallback(routeCallback)
     }
 
-    fun connectPod(context: Context, device: BluetoothDevice) {
+    fun connectPod(context: Context, device: BluetoothDevice, prefsBridge: YukiHookPrefsBridge) {
         mContext = context
         mDevice = device
+        mPrefsBridge = prefsBridge
+
+        updateFeatureToggle()
 
         context.registerReceiver(broadcastReceiver, IntentFilter().apply {
             this.addAction(HyperPodsAction.ACTION_ANC_SELECT)

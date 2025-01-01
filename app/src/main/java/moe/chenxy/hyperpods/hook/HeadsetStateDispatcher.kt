@@ -71,7 +71,7 @@ object HeadsetStateDispatcher : YukiBaseHooker() {
                                 ).show()
                                 return@post
                             }
-                            L2CAPController.connectPod(context, device)
+                            L2CAPController.connectPod(context, device, prefs)
 
                         } else if (currState == BluetoothHeadset.STATE_DISCONNECTING || currState == BluetoothHeadset.STATE_DISCONNECTED) {
                             statusBarManager.setIconVisibility("wireless_headset", false)
