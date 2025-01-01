@@ -186,7 +186,6 @@ fun MainUI() {
     }
 
     val hazeState = remember { HazeState() }
-
     val hazeStyle = HazeStyle(
         backgroundColor = if (currentScrollBehavior.state.heightOffset > -1) Color.Transparent else MiuixTheme.colorScheme.background,
         tint = HazeTint(
