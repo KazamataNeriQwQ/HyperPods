@@ -1,29 +1,27 @@
-## HyperPods
+## HyperPods AAP
 
-HyperPods is an Xposed Module that enhance funtionality  for non-Xiaomi headphones.
+HyperPods is an Xposed Module that enhance funtionality for non-Xiaomi headphones.
 
-It Support Showing Battery Info with Strong Toast / Native Headset Notification.
+Currently supported below features:
+- Ear Detection
+- ANC Switch
+- 1% Battery Info
 
-And Shows Battery Info on the HyperOS Settings / BT Tiles Detail / Status Bar.
+Scheduled features:
+- Key customize / detection and Voice Assist Trigger.
+- Conversation Awareness for AirPods Pro Gen.2.
 
-Currently and in the future, may support Apple AirPods series only.
 
-The Project is based on [`BtHelper`](https://github.com/TheParasiteProject/packages_apps_BtHelper) by someone5678
+BLE listen is removed until we should support the other pods.
 
-Express my gratitude to the following projects as `BtHelper` do:
-* [BtHelper](https://github.com/TheParasiteProject/packages_apps_BtHelper): Code base of this project.
-* [OpenPods](https://github.com/adolfintel/OpenPods): Code base of `BtHelper`.
-* [CAPod](https://github.com/d4rken-org/capod): Media play/pause, OnePod mode, and many other functionalities.
-* [xingrz](https://github.com/xingrz): Android System Settings integration.
+
+`AAP` is a protocol made by **Apple Inc.** and used to communicate with AirPods.
+
+Express my gratitude to the following projects:
 * [aln](https://github.com/kavishdevar/aln): AAP Definition and many awesome functionalities.
-
 
 ## License
 
-`Bluetooth Devices Helper` by someone5678 is licensed under the GNU General Public License v3.0.
-
-`HyperPods`(This Project) is licensed under the GNU General Public License v3.0 too.
-
-Copyright (C) 2023 someone5678
+`HyperPods AAP`(This Project) is licensed under the GNU General Public License v3.0.
 
 Copyright (C) 2024 Art_Chen
