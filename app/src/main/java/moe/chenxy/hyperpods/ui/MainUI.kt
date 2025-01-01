@@ -23,12 +23,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.hazeChild
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -55,6 +62,7 @@ import top.yukonga.miuix.kmp.basic.rememberTopAppBarState
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.icons.Info
 import top.yukonga.miuix.kmp.icon.icons.Settings
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @OptIn(FlowPreview::class)
@@ -100,6 +108,7 @@ fun MainUI() {
     val autoSwitchToSpeaker = remember { mutableStateOf(true) }
     val canShowDetailPage = remember { mutableStateOf(false) }
     val ancMode = remember { mutableStateOf(NoiseControlMode.OFF) }
+    val init = remember { mutableStateOf(false) }
     var restoreAncJob: Job? = null
 
     val broadcastReceiver = object : BroadcastReceiver() {
@@ -138,15 +147,18 @@ fun MainUI() {
         }
     }
     val context = LocalContext.current
-    context.registerReceiver(broadcastReceiver, IntentFilter().apply {
-        this.addAction(HyperPodsAction.ACTION_PODS_ANC_CHANGED)
-        this.addAction(HyperPodsAction.ACTION_EAR_DETECTION_STATUS_CHANGED)
-        this.addAction(HyperPodsAction.ACTION_PODS_BATTERY_CHANGED)
-        this.addAction(HyperPodsAction.ACTION_PODS_CONNECTED)
-        this.addAction(HyperPodsAction.ACTION_PODS_DISCONNECTED)
-    }, Context.RECEIVER_EXPORTED)
+    if (!init.value) {
+        context.registerReceiver(broadcastReceiver, IntentFilter().apply {
+            this.addAction(HyperPodsAction.ACTION_PODS_ANC_CHANGED)
+            this.addAction(HyperPodsAction.ACTION_EAR_DETECTION_STATUS_CHANGED)
+            this.addAction(HyperPodsAction.ACTION_PODS_BATTERY_CHANGED)
+            this.addAction(HyperPodsAction.ACTION_PODS_CONNECTED)
+            this.addAction(HyperPodsAction.ACTION_PODS_DISCONNECTED)
+        }, Context.RECEIVER_EXPORTED)
 
-    context.sendBroadcast(Intent(HyperPodsAction.ACTION_PODS_UI_INIT))
+        context.sendBroadcast(Intent(HyperPodsAction.ACTION_PODS_UI_INIT))
+        init.value = true
+    }
 
     fun setAncMode(mode: NoiseControlMode) {
         if (restoreAncJob?.isActive == true) {
@@ -173,25 +185,64 @@ fun MainUI() {
         }
     }
 
+    val hazeState = remember { HazeState() }
+
+    val hazeStyle = HazeStyle(
+        backgroundColor = if (currentScrollBehavior.state.heightOffset > -1) Color.Transparent else MiuixTheme.colorScheme.background,
+        tint = HazeTint(
+            MiuixTheme.colorScheme.background.copy(
+                if (currentScrollBehavior.state.heightOffset > -1) 1f
+                else lerp(1f, 0.67f, (currentScrollBehavior.state.heightOffset + 1) / -143f)
+            )
+        )
+    )
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             BoxWithConstraints {
                 if (maxWidth > 840.dp) {
                     SmallTopAppBar(
+                        color = Color.Transparent,
                         title = currentTitle,
+                        modifier = Modifier
+                            .hazeChild(
+                                hazeState
+                            ) {
+                                style = hazeStyle
+                                blurRadius = 25.dp
+                                noiseFactor = 0f
+                            },
                         scrollBehavior = currentScrollBehavior
                     )
                 } else {
                     TopAppBar(
+                        color = Color.Transparent,
                         title = currentTitle,
-                        scrollBehavior = currentScrollBehavior
+                        scrollBehavior = currentScrollBehavior,
+                        modifier = Modifier
+                            .hazeChild(
+                                hazeState
+                            ) {
+                                style = hazeStyle
+                                blurRadius = 25.dp
+                                noiseFactor = 0f
+                            }
                     )
                 }
             }
         },
         bottomBar = {
             NavigationBar(
+                color = Color.Transparent,
+                modifier = Modifier
+                    .hazeChild(
+                        hazeState
+                    ) {
+                        style = hazeStyle
+                        blurRadius = 25.dp
+                        noiseFactor = 0f
+                    },
                 items = items,
                 selected = targetPage,
                 onClick = { index ->
@@ -206,7 +257,7 @@ fun MainUI() {
         },
     ) { padding ->
         AppHorizontalPager(
-            modifier = Modifier.imePadding(),
+            modifier = Modifier.imePadding().haze(state = hazeState),
             pagerState = pagerState,
             topAppBarScrollBehaviorList = topAppBarScrollBehaviorList,
             padding = padding,

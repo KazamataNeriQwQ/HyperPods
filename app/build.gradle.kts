@@ -113,4 +113,5 @@ dependencies {
     implementation(compose.components.resources)
     implementation(compose.preview)
     debugImplementation(compose.uiTooling)
+    implementation(libs.haze)
 }
