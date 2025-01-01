@@ -9,4 +9,6 @@ object HyperPodsAction {
     const val ACTION_PODS_ANC_CHANGED = "chen.action.hyperpods.pods_anc_select"
     const val ACTION_EAR_DETECTION_STATUS_CHANGED = "chen.action.hyperpods.ear_detection_status_changed"
     const val ACTION_EAR_DETECTION_SWITCH_CHANGED = "chen.action.hyperpods.ear_detection_switch_changed"
+    const val ACTION_GET_PODS_MAC = "chen.action.hyperpods.get_pods_mac"
+    const val ACTION_PODS_MAC_RECEIVED = "chen.action.hyperpods.get_pods_mac"
 }

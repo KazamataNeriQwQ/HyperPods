@@ -17,7 +17,6 @@ import android.media.MediaRouter2.ScanToken
 import android.media.RouteDiscoveryPreference
 import android.os.ParcelUuid
 import android.util.Log
-import android.widget.Toast
 import com.highcapable.yukihookapi.hook.type.java.BooleanType
 import com.highcapable.yukihookapi.hook.type.java.IntType
 import de.robv.android.xposed.XposedHelpers
@@ -26,7 +25,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import moe.chenxy.hyperpods.BuildConfig
-import moe.chenxy.hyperpods.pods.EarDetectionStatus
 import moe.chenxy.hyperpods.utils.MediaControl
 import moe.chenxy.hyperpods.utils.SystemApisUtils
 import moe.chenxy.hyperpods.utils.SystemApisUtils.setIconVisibility
@@ -41,7 +39,7 @@ import java.util.concurrent.Executor
 @SuppressLint("MissingPermission", "StaticFieldLeak")
 object L2CAPController {
     lateinit var socket: BluetoothSocket
-    var mContext: Context? = null
+    private var mContext: Context? = null
     lateinit var mDevice: BluetoothDevice
     private val audioManager: AudioManager? by lazy {
         mContext?.getSystemService(AudioManager::class.java)
@@ -58,18 +56,30 @@ object L2CAPController {
     var routes: List<MediaRoute2Info> = listOf()
     private var lastTempBatt = 0
 
-    lateinit var mediaRouter: MediaRouter2
+    private lateinit var mediaRouter: MediaRouter2
     lateinit var currentEarDetectionParams: EarDetectionParams
     lateinit var currentBatteryParams: BatteryParams
     private var currentAnc: Int = 1
 
+    private const val TAG = "HyperPods-L2CAPController"
+
     private val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(p0: Context?, p1: Intent?) {
+            if (p1?.action == HyperPodsAction.ACTION_GET_PODS_MAC) {
+                Intent(HyperPodsAction.ACTION_PODS_MAC_RECEIVED).apply {
+                    Log.i(TAG, "${p1.action} ,mac ${mDevice.address}")
+                    this.`package` = "com.android.systemui"
+                    this.putExtra("mac", mDevice.address)
+                    this.addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+                    p0?.sendBroadcast(this)
+                    return
+                }
+            }
             handleUIEvent(p1!!)
         }
     }
 
-    fun changeUIAncStatus(status: Int) {
+    private fun changeUIAncStatus(status: Int) {
         if (status < 1 || status > 4) {
             // ignore invalid param
             return
@@ -82,7 +92,7 @@ object L2CAPController {
         }
     }
 
-    fun changeUIInEarStatus(status: EarDetectionParams) {
+    private fun changeUIInEarStatus(status: EarDetectionParams) {
         Intent(HyperPodsAction.ACTION_EAR_DETECTION_STATUS_CHANGED).apply {
             this.putExtra("status", status)
             this.`package` = BuildConfig.APPLICATION_ID
@@ -91,7 +101,7 @@ object L2CAPController {
         }
     }
 
-    fun changeUIBatteryStatus(status: BatteryParams) {
+    private fun changeUIBatteryStatus(status: BatteryParams) {
         Intent(HyperPodsAction.ACTION_PODS_BATTERY_CHANGED).apply {
             this.putExtra("status", status)
             this.`package` = BuildConfig.APPLICATION_ID
@@ -103,7 +113,7 @@ object L2CAPController {
     fun handleUIEvent(intent: Intent) {
         when (intent.action) {
             HyperPodsAction.ACTION_PODS_UI_INIT -> {
-                Log.i("Art_Chen", "UI Init")
+                Log.i(TAG, "UI Init")
 
                 if (::currentEarDetectionParams.isInitialized)
                     changeUIInEarStatus(currentEarDetectionParams)
@@ -129,7 +139,13 @@ object L2CAPController {
         }
     }
 
-    fun handleInEarStatusChanged(status: List<Byte>) {
+    private fun handleInEarStatusChanged(status: List<Byte>) {
+        if (::currentEarDetectionParams.isInitialized) {
+            if (currentEarDetectionParams.left == status[0] && currentEarDetectionParams.right == status[1]) {
+                Log.d(TAG, "receive same in ear status, ignored")
+                return
+            }
+        }
         currentEarDetectionParams = EarDetectionParams(status[0], status[1])
         changeUIInEarStatus(currentEarDetectionParams)
 
@@ -144,7 +160,7 @@ object L2CAPController {
             leftInEar && rightInEar
         }
 
-        Log.d("Art_Chen", "handleInEarStatusChanged left $leftInEar right $rightInEar res $inEar")
+        Log.d(TAG, "handleInEarStatusChanged left $leftInEar right $rightInEar res $inEar")
 
         // Check if need disconnect Audio and switch to speaker
         if (disconnectAudio) {
@@ -167,7 +183,7 @@ object L2CAPController {
                 MediaControl.sendPlay()
                 pausedAudio = false
             }
-        } else if (!disconnectedAudio && audioIsPlaying){
+        } else if (!disconnectedAudio && audioIsPlaying && !pausedAudio){
             MediaControl.sendPause()
             pausedAudio = true
         }
@@ -176,19 +192,19 @@ object L2CAPController {
     @OptIn(ExperimentalStdlibApi::class)
     fun handleBatteryChanged(packet: ByteArray) {
         val batteries = AirPodsNotifications.BatteryNotification.getBattery()
-        var left = PodParams(
+        val left = PodParams(
             batteries[0].level,
             batteries[0].status == BatteryStatus.CHARGING,
             batteries[0].status != BatteryStatus.DISCONNECTED,
             batteries[0].status
         )
-        var right = PodParams(
+        val right = PodParams(
             batteries[1].level,
             batteries[1].status == BatteryStatus.CHARGING,
             batteries[1].status != BatteryStatus.DISCONNECTED,
             batteries[1].status
         )
-        var case = PodParams(
+        val case = PodParams(
             batteries[2].level,
             batteries[2].status == BatteryStatus.CHARGING,
             batteries[2].status != BatteryStatus.DISCONNECTED,
@@ -196,7 +212,7 @@ object L2CAPController {
         )
         if (BuildConfig.DEBUG) {
             Log.v(
-                "Art_Chen",
+                TAG,
                 "batt left ${left.battery} right ${right.battery} case ${case.battery} packet ${
                     packet.toHexString(
                         HexFormat.UpperCase
@@ -205,7 +221,7 @@ object L2CAPController {
             )
         }
 
-        val shouldShowToast = !mShowedConnectedToast || (lastCaseConnected != case.isConnected && lastCaseConnected == false)
+        val shouldShowToast = !mShowedConnectedToast || (lastCaseConnected != case.isConnected && !lastCaseConnected)
         if (shouldShowToast && (left.battery <= 0 || right.battery <= 0 || (case.isConnected && case.battery <= 0))) {
             // only show connected toast when battery info all correct
             return
@@ -251,7 +267,7 @@ object L2CAPController {
         } else {
             if (BuildConfig.DEBUG) {
                 Log.v(
-                    "Art_Chen",
+                    TAG,
                     "Unknown AirPods Packet Received: ${packet.toHexString(HexFormat.UpperCase)}"
                 )
             }
@@ -261,16 +277,14 @@ object L2CAPController {
 
     val routeCallback = object : MediaRouter2.RouteCallback() {
         override fun onRoutesUpdated(routes: List<MediaRoute2Info>) {
-            Log.v("Art_Chen", "routes updated: $routes")
+            Log.v(TAG, "routes updated: $routes")
             this@L2CAPController.routes = routes
         }
     }
-    fun startRoutesScan() {
-        val executor = object : Executor {
-            override fun execute(p0: Runnable?) {
-                CoroutineScope(Dispatchers.IO).launch {
-                    p0?.run()
-                }
+    private fun startRoutesScan() {
+        val executor = Executor { p0 ->
+            CoroutineScope(Dispatchers.IO).launch {
+                p0?.run()
             }
         }
 
@@ -279,7 +293,7 @@ object L2CAPController {
         scanToken = mediaRouter.requestScan(MediaRouter2.ScanRequest.Builder().build())
     }
 
-    fun stopRoutesScan() {
+    private fun stopRoutesScan() {
         scanToken?.let { mediaRouter.cancelScanRequest(it) }
         mediaRouter.unregisterRouteCallback(routeCallback)
     }
@@ -292,6 +306,7 @@ object L2CAPController {
             this.addAction(HyperPodsAction.ACTION_ANC_SELECT)
             this.addAction(HyperPodsAction.ACTION_PODS_UI_INIT)
             this.addAction(HyperPodsAction.ACTION_EAR_DETECTION_SWITCH_CHANGED)
+            this.addAction(HyperPodsAction.ACTION_GET_PODS_MAC)
         }, Context.RECEIVER_EXPORTED)
 
         Intent(HyperPodsAction.ACTION_PODS_CONNECTED).apply {
@@ -310,10 +325,10 @@ object L2CAPController {
             socket = BluetoothSocket::class.java.getDeclaredConstructor(IntType, BooleanType, BooleanType,
                 BluetoothDevice::class.java, IntType,
                 ParcelUuid::class.java).newInstance(3, true, true, device, 0x1001, uuid) as BluetoothSocket
-            Log.d("Art_Chen", "connecting AirPods!")
+            Log.d(TAG, "connecting AirPods!")
             socket.connect()
 
-            Log.d("Art_Chen", "connected!")
+            Log.d(TAG, "connected!")
             socket.outputStream.write(Enums.HANDSHAKE.value)
             socket.outputStream.flush()
             delay(200)
@@ -327,7 +342,7 @@ object L2CAPController {
                 val buffer = ByteArray(1024)
                 val bytesRead = socket.inputStream.read(buffer)
                 if (BuildConfig.DEBUG) {
-                    Log.v("Art_Chen", "bytesRead $bytesRead!")
+                    Log.v(TAG, "bytesRead $bytesRead!")
                 }
                 if (bytesRead > 0) {
                     handleAirPodsPacket(buffer.copyOfRange(0, bytesRead))
@@ -367,7 +382,7 @@ object L2CAPController {
     }
 
     fun setANCMode(mode: Int) {
-        Log.d("Art_Chen", "setANCMode: $mode")
+        Log.d(TAG, "setANCMode: $mode")
         when (mode) {
             1 -> {
                 socket.outputStream?.write(Enums.NOISE_CANCELLATION_OFF.value)
@@ -471,7 +486,7 @@ object L2CAPController {
             for (route in routes) {
                 // try switch to speaker
                 if (route.type == MediaRoute2Info.TYPE_BUILTIN_SPEAKER) {
-                    Log.d("Art_Chen", "found speaker route $route")
+                    Log.d(TAG, "found speaker route $route")
                     mediaRouter.transferTo(route)
                 }
             }
@@ -504,7 +519,7 @@ object L2CAPController {
         for (route in routes) {
             // try switch back
             if (route.type == MediaRoute2Info.TYPE_BLUETOOTH_A2DP && route.name == device!!.name) {
-                Log.d("Art_Chen", "found bt route $route")
+                Log.d(TAG, "found bt route $route")
                 mediaRouter.transferTo(route)
             }
         }
