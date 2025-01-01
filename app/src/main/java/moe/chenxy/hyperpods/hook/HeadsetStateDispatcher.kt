@@ -14,7 +14,6 @@ import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.factory.method
 import de.robv.android.xposed.XposedHelpers
 import moe.chenxy.hyperpods.pods.L2CAPController
-import moe.chenxy.hyperpods.pods.PodsScanner
 import moe.chenxy.hyperpods.utils.SystemApisUtils.setIconVisibility
 import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil.cancelPodsNotificationByMiuiBt
 
@@ -33,8 +32,6 @@ object HeadsetStateDispatcher : YukiBaseHooker() {
     external fun nativeGetHookResult(): Boolean
 
     override fun onHook() {
-        var podsScanner : PodsScanner? = null
-
         // Load Native hook
         System.loadLibrary("hyperpods_hook")
 
@@ -61,11 +58,7 @@ object HeadsetStateDispatcher : YukiBaseHooker() {
 
                         val statusBarManager =
                             context.getSystemService("statusbar") as StatusBarManager
-                        if (currState == BluetoothHeadset.STATE_CONNECTING) {
-//                            podsScanner?.stopScan()
-//                            podsScanner = PodsScanner(context, moduleResources)
-//                            podsScanner!!.startScan(device)
-                        } else if (currState == BluetoothHeadset.STATE_CONNECTED) {
+                        if (currState == BluetoothHeadset.STATE_CONNECTED) {
                             // Show Wireless Pods icon
                             statusBarManager.setIconVisibility("wireless_headset", true)
 
