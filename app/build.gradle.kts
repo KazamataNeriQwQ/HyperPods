@@ -25,8 +25,8 @@ android {
         applicationId = "moe.chenxy.hyperpods"
         minSdk = 35
         targetSdk = 35
-        versionCode = 3
-        versionName = "2.0-AAP-V-HyperOS"
+        versionCode = 4
+        versionName = "2.0.1-AAP-V-HyperOS"
         externalNativeBuild {
             cmake {
                 cppFlags += ""
