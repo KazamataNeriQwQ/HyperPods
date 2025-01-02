@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -99,6 +100,17 @@ fun AboutPage(
                     onClick = {
                         Intent(Intent.ACTION_VIEW).apply {
                             this.data = Uri.parse("https://github.com/Art-Chen/HyperPods")
+                            context.startActivity(this)
+                        }
+                    },
+                    enabled = true
+                )
+                BasicComponent(
+                    title = stringResource(R.string.donate),
+                    summary = stringResource(R.string.donate_detail),
+                    onClick = {
+                        Intent(Intent.ACTION_VIEW).apply {
+                            this.data = Uri.parse("https://afdian.com/a/art_chen?tab=home")
                             context.startActivity(this)
                         }
                     },

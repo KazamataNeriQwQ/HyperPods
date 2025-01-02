@@ -66,6 +66,9 @@ import top.yukonga.miuix.kmp.icon.icons.Info
 import top.yukonga.miuix.kmp.icon.icons.Settings
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
+@Volatile
+var restoreAncJob: Job? = null
+
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @OptIn(FlowPreview::class)
 @Composable
@@ -112,7 +115,6 @@ fun MainUI() {
     val canShowDetailPage = remember { mutableStateOf(false) }
     val ancMode = remember { mutableStateOf(NoiseControlMode.OFF) }
     val init = remember { mutableStateOf(false) }
-    var restoreAncJob: Job? = null
 
     val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(p0: Context?, p1: Intent?) {

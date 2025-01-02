@@ -14,4 +14,6 @@
     <string name="batt_left_pod">"左: "</string>
     <string name="batt_right_pod">"右: "</string>
     <string name="waiting_for_pod">等待AirPods连接...</string>
+    <string name="donate">给我来杯奶茶~</string>
+    <string name="donate_detail">跳转到 “爱发电”</string>
 </resources>

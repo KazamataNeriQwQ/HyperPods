@@ -14,4 +14,6 @@
     <string name="batt_left_pod">"Left: "</string>
     <string name="batt_right_pod">"Right: "</string>
     <string name="waiting_for_pod">Waiting for AirPods Connection…</string>
+    <string name="donate">Buy me a coffee</string>
+    <string name="donate_detail">Go AFDIAN</string>
 </resources>
