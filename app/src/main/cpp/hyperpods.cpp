@@ -32,6 +32,7 @@ uintptr_t getModuleBase(const char *module_name) {
 
 uintptr_t findStr(uintptr_t moduleBase, const char *str) {
     size_t len = strlen(str) + 1;
+    uintptr_t max_addr = moduleBase + 0xd00000;
     uintptr_t pos = moduleBase;
     for (;;) {
         auto &buf = *reinterpret_cast<char (*)[1024]>(pos);
@@ -49,6 +50,9 @@ uintptr_t findStr(uintptr_t moduleBase, const char *str) {
             }
         }
         pos += 1024;
+        if (pos > max_addr) {
+            return -1;
+        }
     }
 }
 
@@ -61,10 +65,12 @@ uint8_t l2c_fcr_chk_chan_modes_hook(void* p_ccb) {
     return 1;
 }
 
-uintptr_t findFunction(uintptr_t moduleBase, uintptr_t str1Addr, uintptr_t str2Addr) {
+uintptr_t findFunction(uintptr_t moduleBase, uintptr_t str1Addr, uintptr_t str2Addr, bool isMtk) {
     uintptr_t pos = moduleBase;
+    uintptr_t max_addr = moduleBase + 0xd00000;
     uintptr_t need_offset_hex = (((str1Addr - moduleBase) & 0xfff) * 4) + 1;
     uintptr_t need_offset_str2_hex = ((str2Addr - moduleBase) & 0xfff) * 4;
+    uintptr_t str_offset_to_func = isMtk ? 0x84 : 0x44;
     for (;;) {
         auto &buf = *reinterpret_cast<char (*)[1024]>(pos);
 
@@ -108,9 +114,9 @@ uintptr_t findFunction(uintptr_t moduleBase, uintptr_t str1Addr, uintptr_t str2A
                 continue;
             }
 
-            return pos + i - 0x44;
+            return pos + i - str_offset_to_func;
         }
-        if (pos > moduleBase + 0xd00000) {
+        if (pos > max_addr) {
             return -1;
         }
         pos += 1024;
@@ -118,12 +124,16 @@ uintptr_t findFunction(uintptr_t moduleBase, uintptr_t str1Addr, uintptr_t str2A
 }
 
 void on_library_loaded(const char *name, void *handle) {
-    // hooks on `libtarget.so`
     if (std::string(name).ends_with("libbluetooth_jni.so")) {
         auto base_addr = getModuleBase("libbluetooth_jni.so");
+        auto mtk_str_addr = findStr(base_addr, "vendor/mediatek/proprietary/packages/modules");
         auto str_addr = findStr(base_addr, "l2c_fcr_chk_chan_modes");
-        auto str2_addr = findStr(base_addr, "assert failed: p_ccb != NULL");
-        auto func_log_addr = findFunction(base_addr, str_addr, str2_addr);
+        // TODO: check prop may be better.
+        bool isMtk = mtk_str_addr != -1;
+        auto str2_addr = findStr(base_addr,
+                                 isMtk ? "L2CAP - Peer does not support our desired channel types"
+                                            : "assert failed: p_ccb != NULL");
+        auto func_log_addr = findFunction(base_addr, str_addr, str2_addr, isMtk);
         if (func_log_addr == -1) {
             isHookSuccess = false;
             return;
