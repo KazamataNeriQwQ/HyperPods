@@ -282,12 +282,12 @@ object L2CAPController {
 
     }
 
-    fun updateFeatureToggle() {
+    private fun updateFeatureToggle() {
         earDetection = mPrefsBridge.getBoolean(HyperPodsPrefsKey.EAR_DETECTION, true)
         disconnectAudio = mPrefsBridge.getBoolean(HyperPodsPrefsKey.EAR_DETECTION_SWITCH_SPEAKER, true)
     }
 
-    val routeCallback = object : MediaRouter2.RouteCallback() {
+    private val routeCallback = object : MediaRouter2.RouteCallback() {
         override fun onRoutesUpdated(routes: List<MediaRoute2Info>) {
             Log.v(TAG, "routes updated: $routes")
             this@L2CAPController.routes = routes
@@ -398,6 +398,10 @@ object L2CAPController {
 
     fun setANCMode(mode: Int) {
         Log.d(TAG, "setANCMode: $mode")
+
+        // Set Off listening mode for AirPods Pro 2 to enable OFF mode
+        setOffListeningMode(mode == 1)
+
         when (mode) {
             1 -> {
                 socket.outputStream?.write(Enums.NOISE_CANCELLATION_OFF.value)
