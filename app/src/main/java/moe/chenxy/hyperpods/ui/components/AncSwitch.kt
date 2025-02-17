@@ -1,6 +1,8 @@
 package moe.chenxy.hyperpods.ui.components
 
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -53,7 +55,8 @@ fun AncSwitch(ancStatus: NoiseControlMode, onAncModeChange: (NoiseControlMode) -
                 NoiseControlMode.NOISE_CANCELLATION -> switchWidth
                 NoiseControlMode.TRANSPARENCY -> switchWidth * 2
                 NoiseControlMode.ADAPTIVE -> switchWidth * 3
-            }, label = "AncSwitchAnimation")
+            }, label = "AncSwitchAnimation", animationSpec = spring(0.78f, Spring.StiffnessLow)
+        )
 
         Box {
             Row(Modifier
