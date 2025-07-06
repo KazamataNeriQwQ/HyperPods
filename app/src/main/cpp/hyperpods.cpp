@@ -32,7 +32,7 @@ uintptr_t getModuleBase(const char *module_name) {
 
 uintptr_t findStr(uintptr_t moduleBase, const char *str) {
     size_t len = strlen(str) + 1;
-    uintptr_t max_addr = moduleBase + 0xd00000;
+    uintptr_t max_addr = moduleBase + 0xc50000;
     uintptr_t pos = moduleBase;
     for (;;) {
         auto &buf = *reinterpret_cast<char (*)[1024]>(pos);
@@ -54,6 +54,7 @@ uintptr_t findStr(uintptr_t moduleBase, const char *str) {
             return -1;
         }
     }
+    return -1;
 }
 
 uint8_t (*l2c_fcr_chk_chan_modes_backup)(void* p_ccb);
@@ -67,7 +68,7 @@ uint8_t l2c_fcr_chk_chan_modes_hook(void* p_ccb) {
 
 uintptr_t findFunction(uintptr_t moduleBase, uintptr_t str1Addr, uintptr_t str2Addr, bool isMtk) {
     uintptr_t pos = moduleBase;
-    uintptr_t max_addr = moduleBase + 0xd00000;
+    uintptr_t max_addr = moduleBase + 0xc50000;
     uintptr_t need_offset_hex = (((str1Addr - moduleBase) & 0xfff) * 4) + 1;
     uintptr_t need_offset_str2_hex = ((str2Addr - moduleBase) & 0xfff) * 4;
     uintptr_t str_offset_to_func = isMtk ? 0x84 : 0x44;
