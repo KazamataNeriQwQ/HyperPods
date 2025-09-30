@@ -1,6 +1,6 @@
 ## HyperPods AAP
 
-build
+build try 
 
 HyperPods is an Xposed Module that enhance funtionality for non-Xiaomi headphones.
 
