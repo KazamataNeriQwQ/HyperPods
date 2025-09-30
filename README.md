@@ -1,5 +1,7 @@
 ## HyperPods
 
+this fork to build apk
+
 HyperPods is an Xposed Module that enhance funtionality  for non-Xiaomi headphones.
 
 It Support Showing Battery Info with Strong Toast / Native Headset Notification.
